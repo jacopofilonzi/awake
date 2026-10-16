@@ -1,0 +1,9 @@
+node_modules/
+dist/
+data/
+.env
+*.log
+
+# Go agent
+agents/go/bin/
+agents/go/awake-agent.toml
