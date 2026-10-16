@@ -1,5 +1,6 @@
 # Awake — common tasks. Run `make` or `make help` for the list.
-# Recipes must work in sh and cmd.exe: no inline VAR=x, no rm/cp/mkdir -p (use node scripts).
+# Recipes must work in sh and cmd.exe: no inline VAR=x, no rm/cp/mkdir -p (use node -e).
+# Each agent has its own build (agents/go/Makefile): these targets delegate to it.
 
 AGENT_DIR := agents/go
 AGENT_CONFIG := awake-agent.toml
@@ -16,7 +17,7 @@ help:
 	@echo "  make build           bundle the backend into backend/dist"
 	@echo "  make start           run the bundle (reads .env)"
 	@echo "  make test            backend and agent tests"
-	@echo "  make check           typecheck, go vet, gofmt (must pass before declaring work done)"
+	@echo "  make check           typecheck, gofmt, go vet, go test (must pass before declaring work done)"
 	@echo "  make reset-password ACCOUNT=admin   print a new temporary password for a user"
 	@echo ""
 	@echo "Server with Docker"
@@ -26,7 +27,7 @@ help:
 	@echo "  make agent           run it (simulated outputs, console on stdin)"
 	@echo "  make agent-dry       run it without sending magic packets"
 	@echo "  make agent-test      go test"
-	@echo "  make agent-build     cross-compile into $(AGENT_DIR)/bin"
+	@echo "  make agent-build     cross-compile into $(AGENT_DIR)/dist"
 	@echo ""
 	@echo "  make clean           remove build output"
 
@@ -51,11 +52,11 @@ start: build
 
 test: node_modules
 	npm test
-	cd $(AGENT_DIR) && go test ./...
+	$(MAKE) -C $(AGENT_DIR) test
 
 check: node_modules
 	npm run check
-	node scripts/check-go.mjs $(AGENT_DIR)
+	$(MAKE) -C $(AGENT_DIR) check
 
 reset-password: node_modules
 	@node -e "if (!process.argv[1]) { console.error('usage: make reset-password ACCOUNT=<username>'); process.exit(1) }" "$(ACCOUNT)"
@@ -85,10 +86,10 @@ agent-dry: $(AGENT_DIR)/$(AGENT_CONFIG)
 	cd $(AGENT_DIR) && go run ./cmd/awake-agent -config $(AGENT_CONFIG) -dry-run
 
 agent-test:
-	cd $(AGENT_DIR) && go test ./...
+	$(MAKE) -C $(AGENT_DIR) test
 
 agent-build:
-	node scripts/build-agent.mjs $(AGENT_DIR)
+	$(MAKE) -C $(AGENT_DIR) cross
 
 clean:
-	node -e "for (const d of ['backend/dist', '$(AGENT_DIR)/bin']) require('fs').rmSync(d, { recursive: true, force: true })"
+	node -e "for (const d of ['backend/dist', '$(AGENT_DIR)/dist']) require('fs').rmSync(d, { recursive: true, force: true })"
