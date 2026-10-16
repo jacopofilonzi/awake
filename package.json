@@ -4,16 +4,20 @@
   "type": "module",
   "workspaces": [
     "shared",
-    "backend"
+    "backend",
+    "frontend"
   ],
   "scripts": {
-    "dev": "npm run dev -w backend",
-    "build": "npm run build -w backend",
-    "check": "npm run check -w backend",
+    "dev": "concurrently -k -n backend,frontend -c blue,magenta \"npm run dev -w backend\" \"npm run dev -w frontend\"",
+    "build": "npm run build -w frontend && npm run build -w backend",
+    "check": "npm run check -w backend && npm run check -w frontend",
     "test": "npm run test -w backend",
     "start": "npm run start -w backend"
   },
   "engines": {
     "node": ">=24"
+  },
+  "devDependencies": {
+    "concurrently": "^10.0.6"
   }
 }

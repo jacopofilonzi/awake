@@ -1,0 +1,192 @@
+/* Material 3, low-chroma "ardesia" (slate) scheme. Colors are CSS variables switched by
+   html[data-theme] and by .scheme-admin (the admin area); Tailwind maps them to semantic utilities
+   (bg-surface, text-on-surface-variant…). Never use raw colors in markup. */
+
+@import "tailwindcss";
+@import "@fontsource-variable/roboto-flex";
+@import "@fontsource/roboto-mono/400.css";
+
+@custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
+
+:root {
+  --md-primary: #4c5f74;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #dde3ea;
+  --md-on-primary-container: #0f1d2a;
+  --md-secondary-container: #e1e3e8;
+  --md-on-secondary-container: #191c20;
+  --md-surface: #f8f9fb;
+  --md-surface-1: #f2f3f6;
+  --md-surface-2: #eceef1;
+  --md-surface-3: #e6e8ec;
+  --md-surface-4: #e0e2e7;
+  --md-on-surface: #191c20;
+  --md-on-surface-variant: #43474e;
+  --md-muted: #5e6268;
+  --md-outline: #73777d;
+  --md-outline-variant: #c3c7cd;
+  --md-ok: #3d6b5a;
+  --md-ok-container: #d9e8e0;
+  --md-warn: #8a6a2b;
+  --md-warn-container: #f1e6cf;
+  --md-error: #a8453c;
+  --md-error-container: #f6dedb;
+  --md-inverse: #2e3135;
+  --md-on-inverse: #eff0f4;
+  --md-scrim: rgb(0 0 0 / 0.38);
+  color-scheme: light;
+}
+
+[data-theme="dark"] {
+  --md-primary: #b4c8df;
+  --md-on-primary: #1d3246;
+  --md-primary-container: #344558;
+  --md-on-primary-container: #d2e4fb;
+  --md-secondary-container: #43474e;
+  --md-on-secondary-container: #dfe2e9;
+  --md-surface: #111316;
+  --md-surface-1: #191b1e;
+  --md-surface-2: #1d2023;
+  --md-surface-3: #272a2e;
+  --md-surface-4: #323539;
+  --md-on-surface: #e2e2e6;
+  --md-on-surface-variant: #c3c7cd;
+  --md-muted: #a8abb1;
+  --md-outline: #8d9197;
+  --md-outline-variant: #43474e;
+  --md-ok: #9fcdb8;
+  --md-ok-container: #24382f;
+  --md-warn: #dcc28e;
+  --md-warn-container: #3b3222;
+  --md-error: #f2b8b0;
+  --md-error-container: #4a2622;
+  --md-inverse: #e2e2e6;
+  --md-on-inverse: #2e3135;
+  color-scheme: dark;
+}
+
+/* Admin area: same structure, only a muted warm accent (surfaces stay neutral in dark mode). */
+.scheme-admin {
+  --md-primary: #7a5c3a;
+  --md-primary-container: #f0e3d4;
+  --md-on-primary-container: #2a1a08;
+  --md-secondary-container: #efe4da;
+  --md-on-secondary-container: #251a10;
+  --md-surface: #fbf8f5;
+  --md-surface-1: #f6f1ec;
+  --md-surface-2: #f1ebe5;
+  --md-surface-3: #ebe5de;
+  --md-surface-4: #e5dfd8;
+  --md-outline-variant: #d3c7bb;
+}
+[data-theme="dark"] .scheme-admin {
+  --md-primary: #cdbba5;
+  --md-on-primary: #2f271d;
+  --md-primary-container: #36322e;
+  --md-on-primary-container: #e6dccf;
+  --md-secondary-container: #383532;
+  --md-on-secondary-container: #e4ded7;
+  --md-surface: #121316;
+  --md-surface-1: #1a1b1e;
+  --md-surface-2: #1e1f22;
+  --md-surface-3: #28292c;
+  --md-surface-4: #333437;
+  --md-outline-variant: #45464a;
+}
+
+@theme inline {
+  --font-sans: "Roboto Flex Variable", Roboto, system-ui, sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, monospace;
+  --color-primary: var(--md-primary);
+  --color-on-primary: var(--md-on-primary);
+  --color-primary-container: var(--md-primary-container);
+  --color-on-primary-container: var(--md-on-primary-container);
+  --color-secondary-container: var(--md-secondary-container);
+  --color-on-secondary-container: var(--md-on-secondary-container);
+  --color-surface: var(--md-surface);
+  --color-surface-1: var(--md-surface-1);
+  --color-surface-2: var(--md-surface-2);
+  --color-surface-3: var(--md-surface-3);
+  --color-surface-4: var(--md-surface-4);
+  --color-on-surface: var(--md-on-surface);
+  --color-on-surface-variant: var(--md-on-surface-variant);
+  --color-muted: var(--md-muted);
+  --color-outline: var(--md-outline);
+  --color-outline-variant: var(--md-outline-variant);
+  --color-ok: var(--md-ok);
+  --color-ok-container: var(--md-ok-container);
+  --color-warn: var(--md-warn);
+  --color-warn-container: var(--md-warn-container);
+  --color-error: var(--md-error);
+  --color-error-container: var(--md-error-container);
+  --color-inverse: var(--md-inverse);
+  --color-on-inverse: var(--md-on-inverse);
+  --color-scrim: var(--md-scrim);
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-surface text-on-surface font-sans antialiased;
+    min-height: 100dvh;
+  }
+  button:not(:disabled),
+  [role="button"] {
+    cursor: pointer;
+  }
+  .icon svg {
+    fill: currentColor;
+    width: 100%;
+    height: 100%;
+  }
+}
+
+/* ---------- buttons (M3: filled, tonal, outlined, text, icon) ---------- */
+
+@utility btn {
+  @apply inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium whitespace-nowrap transition-[background-color,box-shadow,opacity] select-none disabled:pointer-events-none disabled:opacity-40;
+}
+@utility btn-filled {
+  @apply btn bg-primary text-on-primary hover:shadow-md;
+}
+@utility btn-tonal {
+  @apply btn bg-secondary-container text-on-secondary-container hover:shadow-sm;
+}
+@utility btn-outlined {
+  @apply btn border border-outline text-primary hover:bg-primary/8;
+}
+@utility btn-text {
+  @apply btn px-3 text-primary hover:bg-primary/8;
+}
+@utility btn-danger {
+  @apply btn bg-error text-surface hover:shadow-md;
+}
+@utility icon-btn {
+  @apply inline-grid size-10 shrink-0 place-items-center rounded-full text-on-surface-variant transition-colors hover:bg-on-surface/8 disabled:opacity-40;
+}
+
+/* ---------- surfaces ---------- */
+
+@utility card {
+  @apply rounded-xl bg-surface-1 shadow-[0_1px_2px_rgb(0_0_0/0.15),0_1px_3px_1px_rgb(0_0_0/0.06)];
+}
+@utility card-outlined {
+  @apply rounded-xl border border-outline-variant bg-surface;
+}
+@utility chip {
+  @apply inline-flex h-7 items-center gap-1 rounded-lg border border-outline-variant px-2.5 text-[0.8125rem] text-on-surface-variant;
+}
+
+/* ---------- forms ---------- */
+
+@utility field-label {
+  @apply mb-1.5 block text-[0.8125rem] font-medium text-on-surface-variant;
+}
+@utility input {
+  @apply h-12 w-full rounded-sm border border-outline bg-transparent px-4 text-base text-on-surface outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary;
+}
+@utility hint {
+  @apply mt-1 text-xs text-muted;
+}
