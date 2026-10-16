@@ -34,3 +34,13 @@ export function serveSpa(root: string): Handler {
     });
   };
 }
+
+/** `--api-only` (development): Vite serves the UI, so this server only points there. */
+export function apiOnly(publicUrl: string): Handler {
+  const page =
+    `<!doctype html><meta charset="utf-8"><title>Awake API</title>` +
+    `<body style="font:16px system-ui,sans-serif;padding:3rem;max-width:40rem">` +
+    `<h1>Awake API (development)</h1><p>This server only answers <code>/api</code> and <code>/agent</code>.</p>` +
+    `<p>Open the web UI at <a href="${publicUrl}">${publicUrl}</a>.</p></body>`;
+  return (c) => c.html(page, 404);
+}

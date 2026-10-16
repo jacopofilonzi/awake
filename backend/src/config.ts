@@ -6,8 +6,11 @@ import { log } from "./log.ts";
 
 export interface Config {
   port: number;
-  /** Built web UI served as a SPA; a missing directory only disables the UI. */
-  webDir: string;
+  /**
+   * Built web UI served as a SPA; a missing directory only disables the UI. Null with `--api-only`
+   * (`make dev`), where Vite serves the UI and this server only answers the API.
+   */
+  webDir: string | null;
   /** Public origin users reach the server at (scheme + host, no trailing slash). Used for OAuth
    *  redirects, password links, cookie security and the Origin check on state-changing requests. */
   publicUrl: string;

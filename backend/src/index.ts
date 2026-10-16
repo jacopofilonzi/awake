@@ -17,7 +17,10 @@ try {
   process.exit(1);
 }
 
-const [command, arg] = process.argv.slice(2);
+// --api-only: do not serve the web UI (development, where Vite serves it).
+const argv = process.argv.slice(2);
+if (argv.includes("--api-only")) config.webDir = null;
+const [command, arg] = argv.filter((a) => a !== "--api-only");
 
 if (command === "reset-password") {
   if (!arg) {
