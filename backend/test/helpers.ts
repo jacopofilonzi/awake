@@ -35,6 +35,7 @@ export async function startTestServer(overrides: Partial<Config> = {}): Promise<
   // Port 0: the real port is only known after listening; PUBLIC_URL is fixed below.
   const config: Config = {
     port: 0,
+    webDir: path.join(dataDir, "no-web"),
     publicUrl: "http://localhost",
     dataDir,
     trustProxy: false,

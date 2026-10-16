@@ -17,6 +17,7 @@ import { openDb } from "./db.ts";
 import { DeviceService } from "./devices/service.ts";
 import { EventBus } from "./events.ts";
 import { Limiters } from "./ratelimit.ts";
+import { serveSpa } from "./static.ts";
 
 export interface RunningServer {
   port: number;
@@ -46,6 +47,7 @@ export async function startServer(config: Config): Promise<RunningServer> {
   app.use(secureHeaders());
   app.route("/api", createApi({ config, db, hub, devices, bus, limiters, oauth }));
   app.all("/api/*", (c) => c.json({ error: "NOT_FOUND" }, 404));
+  app.get("*", serveSpa(config.webDir));
 
   const server = await new Promise<Server>((resolve) => {
     const s = serve({ fetch: app.fetch, port: config.port }, () => resolve(s as Server)) as Server;

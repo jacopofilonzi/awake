@@ -1,10 +1,13 @@
 // Configuration, read once from the environment at startup. Every variable is documented in .env.example.
 
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { log } from "./log.ts";
 
 export interface Config {
   port: number;
+  /** Built web UI served as a SPA; a missing directory only disables the UI. */
+  webDir: string;
   /** Public origin users reach the server at (scheme + host, no trailing slash). Used for OAuth
    *  redirects, password links, cookie security and the Origin check on state-changing requests. */
   publicUrl: string;
@@ -72,6 +75,8 @@ const PRESETS: Record<string, Partial<ProviderConfig>> = {
 
 export class ConfigError extends Error {}
 
+const here = path.dirname(fileURLToPath(import.meta.url));
+
 export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   const publicUrl = (env.PUBLIC_URL?.trim() || `http://localhost:${env.PORT ?? 8080}`).replace(/\/+$/, "");
   let parsed: URL;
@@ -89,6 +94,8 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
 
   return {
     port: int(env.PORT, 8080, "PORT"),
+    // backend/src/config.ts or backend/dist/index.js -> frontend/dist
+    webDir: path.resolve(env.WEB_DIR?.trim() || path.join(here, "../../frontend/dist")),
     publicUrl: parsed.origin,
     dataDir: path.resolve(env.DATA_DIR?.trim() || "./data"),
     trustProxy: bool(env.TRUST_PROXY, false),
