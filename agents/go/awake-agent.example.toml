@@ -1,0 +1,40 @@
+# Awake agent configuration. Copy to awake-agent.toml (the default path, relative to the working
+# directory) or pass -config <path>. Unknown keys are an error, so typos don't go unnoticed.
+
+# WebSocket URL of the Awake server: ws:// only on a trusted LAN or VPN, wss:// otherwise.
+# Override with AWAKE_SERVER.
+server = "ws://localhost:8080/agent"
+
+# Agent token from the web UI (Agents -> New agent). Prefer the AWAKE_TOKEN environment variable so the
+# token is not stored in a file; it is never logged.
+token = ""
+
+# Log magic packets instead of sending them. Override with AWAKE_DRY_RUN=true or -dry-run.
+dry_run = false
+
+[wol]
+# UDP destination port of magic packets: 9 (discard) is the usual one, 7 (echo) also works for most NICs.
+port = 9
+# Extra destination addresses. 255.255.255.255 is always used.
+broadcast = []          # e.g. ["192.168.10.255"] for a subnet this machine has no address in
+# Also send to the directed broadcast of every local IPv4 subnet (e.g. 192.168.1.255). Default true.
+auto_broadcast = true
+
+# Outputs: at most 32. `id` is what the server binds devices to: 1-32 chars of a-z, 0-9, '-', '_',
+# starting with a letter or digit. Don't change it once devices use it.
+#
+# driver: "sim" is the only driver for now. It simulates the line and logs every action; use the
+# console (toggle/on/off/press/status) to simulate local buttons.
+
+[[outputs]]
+id = "pc-power"
+mode = "button"         # a momentary press, e.g. a relay across a PC's power button
+driver = "sim"
+short_ms = 300          # short press duration (default 300)
+long_ms = 5000          # long press duration (force power-off); omit to disable the long press
+
+[[outputs]]
+id = "lamp"
+mode = "switch"         # stays on or off: set by the server or toggled locally
+driver = "sim"
+initial = false         # state at startup

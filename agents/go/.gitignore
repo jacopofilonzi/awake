@@ -1,0 +1,6 @@
+# Build outputs
+/awake-agent
+/awake-agent.exe
+/dist/
+# Local config: may contain the token
+/awake-agent.toml
