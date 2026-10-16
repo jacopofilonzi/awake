@@ -6,18 +6,20 @@ AGENT_DIR := agents/go
 AGENT_CONFIG := awake-agent.toml
 
 .DEFAULT_GOAL := help
-.PHONY: help install dev build start test check reset-password \
+.PHONY: help install dev dev-backend dev-frontend build start test check reset-password \
         up down logs \
         agent agent-dry agent-test agent-build clean
 
 help:
 	@echo "Server"
 	@echo "  make install         install dependencies"
-	@echo "  make dev             backend with reload on :8080 (reads .env)"
-	@echo "  make build           bundle the backend into backend/dist"
+	@echo "  make dev             backend (:8080) + web UI with hot reload (http://localhost:5173)"
+	@echo "  make dev-backend     backend only"
+	@echo "  make dev-frontend    web UI only (proxies /api and /agent to :8080)"
+	@echo "  make build           build the web UI (frontend/dist) and the backend bundle"
 	@echo "  make start           run the bundle (reads .env)"
 	@echo "  make test            backend and agent tests"
-	@echo "  make check           typecheck, gofmt, go vet, go test (must pass before declaring work done)"
+	@echo "  make check           typecheck backend + web UI, gofmt, go vet, go test (must pass)"
 	@echo "  make reset-password ACCOUNT=admin   print a new temporary password for a user"
 	@echo ""
 	@echo "Server with Docker"
@@ -43,6 +45,12 @@ install:
 
 dev: node_modules
 	npm run dev
+
+dev-backend: node_modules
+	npm run dev -w backend
+
+dev-frontend: node_modules
+	npm run dev -w frontend
 
 build: node_modules
 	npm run build
@@ -92,4 +100,4 @@ agent-build:
 	$(MAKE) -C $(AGENT_DIR) cross
 
 clean:
-	node -e "for (const d of ['backend/dist', '$(AGENT_DIR)/dist']) require('fs').rmSync(d, { recursive: true, force: true })"
+	node -e "for (const d of ['backend/dist', 'frontend/dist', '$(AGENT_DIR)/dist']) require('fs').rmSync(d, { recursive: true, force: true })"
