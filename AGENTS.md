@@ -7,14 +7,13 @@ instead of re-reading the whole repo.
 These guidelines come from a shared template: https://github.com/jacopofilonzi/agents-guideline.
 See "Updating these guidelines" below to align them with the latest version.
 
-<!--
-Template: "Workflow", "Code" and "Testing" are my default style; keep them unless the project needs
-something different. Fill in or delete every <PLACEHOLDER> section, then delete these comments.
--->
-
 ## What it is
 
-<PROJECT>: <one sentence>. Stack: <language + framework + versions>. Targets: <Linux server / Windows, macOS, Linux / …>.
+Awake: self-hosted remote power control for home devices — Wake-on-LAN and relay outputs (buttons and
+switches) driven by always-on agents in the LAN that keep an outbound WebSocket to a server on a VPS.
+Stack: server Node.js 24 + TypeScript 7 + Hono 4 + SQLite (`node:sqlite`) + `ws`; reference agent Go 1.27;
+microcontroller agents (C++, contributed) under `agents/<board>/`; web UI (Svelte 5 PWA) not started yet.
+Targets: server on Linux (Docker); agents on Windows, Linux, macOS, Raspberry Pi, microcontrollers.
 
 ## Workflow
 
@@ -51,7 +50,9 @@ something different. Fill in or delete every <PLACEHOLDER> section, then delete 
 - **Never cause real side effects without asking**: payments, bookings, emails, messages to real users,
   writes to external services. Tests use fakes and fixtures; live checks are read-only. When running the
   app locally for a check, start from an empty data directory unless told otherwise, and stop it afterwards.
-  <List here the endpoints, commands and functions of this project that act for real.>
+  What acts for real here: the Go agent sends real magic packets on the LAN (use `make agent-dry` /
+  `-dry-run`) and real outputs once a hardware driver exists (only `sim` today); login providers are
+  real external services (tests never contact them).
 - **Development never uses production credentials or services**: use test accounts, test bots, sandbox
   keys and a separate database.
 
@@ -89,18 +90,30 @@ and align this project's copies with it:
 
 ## Invariants — don't break these
 
-<!-- Rules that aren't obvious from the code and would cause real damage if broken. Say WHY when it isn't obvious. Examples: -->
-- <Secrets/tokens are never logged or returned; they live in a redacted `Secret` type.>
-- <Optional services (cache, Redis…) never fail a request: errors degrade to a miss; the server starts without them.>
-- <Bump `<CACHE_KEY_VERSION>` whenever a cached payload shape changes.>
-- <When backend API models change, update the frontend types in the same change.>
-- **Upgrading production never loses data or stops the service** (keep if the project has durable data:
-  databases, user files). Durable data is not cache: IDs and formats stay backward compatible. Schema
-  changes are migrations appended to <the migrations file>, never edits to one already released (pushed to
-  `main`). A migration that touches existing rows gets a test that builds a database at the previous version
-  with realistic data and migrates it. The app backs up the database before migrating and refuses to start
-  if the backup fails. Anything the operator must do before deploying (env vars, manual steps) goes in the
-  README upgrade notes.
+- **[docs/PROTOCOL.md](docs/PROTOCOL.md) is the only contract between server and agents**: agents are in
+  other languages and share no code. Any change to the agent messages updates PROTOCOL.md,
+  `backend/src/agents/protocol.ts` and the Go agent in the same change; breaking changes bump the
+  protocol version (`PROTOCOL_VERSION` in `shared/src/index.ts`), since flashed microcontrollers can't
+  be updated in lockstep with the server.
+- **The server never knows the agents' hardware**: outputs are declared by the agent (id, mode, long
+  press available, switch state). Pins, wiring and press durations stay in the agent's config.
+- **Secrets are stored only as hashes** (sessions, agent tokens, password links, OAuth state: SHA-256;
+  passwords: scrypt) and are never logged. A token is shown once, in the response that creates it.
+- **Authorization**: anything a user can't see is `404 NOT_FOUND`, never `403` (ids of others' houses and
+  devices are not confirmed). Device config (MAC, IP, agents) and per-agent results only for house
+  owners/editors. Rules are in `backend/src/access.ts`; new routes go through `requireHouse` /
+  `requireDevice`.
+- **External identities are never matched by email**: only provider + subject. Matching by email would
+  let whoever controls an email at any provider take over an account.
+- **No background polling of devices**: probes run only on user request or in the check loop after an
+  action (keeps agents and LAN quiet; microcontrollers have little headroom).
+- When backend API models change, update `shared/src/api.ts` (the UI's types) in the same change.
+- **Upgrading production never loses data or stops the service**. Durable data is not cache: IDs and
+  formats stay backward compatible. Schema changes are migrations appended to `backend/src/db.ts`, never
+  edits to one already released (pushed to `main`). A migration that touches existing rows gets a test
+  that builds a database at the previous version with realistic data and migrates it. The app backs up
+  the database before migrating and refuses to start if the backup fails. Anything the operator must do
+  before deploying (env vars, manual steps) goes in the README upgrade notes.
 
 ## Code
 
@@ -118,13 +131,17 @@ and align this project's copies with it:
 - Reuse shared clients and connections (HTTP client, DB pool) instead of creating them per request.
 - **Dependencies are recent majors whose APIs differ from most online examples:** check the docs for the
   installed version before using an API. Ask before adding a new dependency.
-  <List pinned or unusual versions here, e.g. "axum 0.8 (`{param}` path syntax)", "TypeScript pinned to 6.x: don't upgrade".>
+  TypeScript 7 (native compiler), zod 4, Hono 4 with `@hono/node-server` 2, openid-client 6 (functional
+  API: `discovery`, `authorizationCodeGrant`, no `Issuer`/`Client` classes), Go agent: `coder/websocket`,
+  `pro-bing`, `BurntSushi/toml`.
 - Deleting user data means moving it to the trash / soft delete, unless agreed otherwise.
 
 ### UI
 
-<!-- Delete if the project has no UI. -->
-- Every UI string goes through i18n, with both the English and the Italian key (`<DEFAULT_LANG>` is the
+The web UI is not started yet: it begins from mockups based on the style of jacopofilonzi.it and
+orario.filonzi.it, to be chosen before writing it.
+
+- Every UI string goes through i18n, with both the English and the Italian key (English is the
   default); the type check must catch a missing key.
 - Svelte 5 runes only (`$state`, `$derived`, `$effect`, `$props`): no legacy stores or `export let`.
   Typed state is `$state<T>(…)` (an annotated `let x: T = $state(…)` narrows to the initial value).
@@ -139,8 +156,10 @@ and align this project's copies with it:
 
 ## Testing
 
-- Unit tests live next to the code. Test parsing against fixtures copied from real responses, never live
-  requests; live checks, if any, are a separate opt-in command (e.g. `make smoke`).
+- Unit tests live next to the code (Go: `_test.go`). Backend tests are end-to-end over HTTP and WebSocket
+  in `backend/test/`: a real server on a temp directory with fast timings, and `FakeAgent`
+  (`backend/test/helpers.ts`) speaking the protocol. Test parsing against fixtures copied from real
+  responses, never live requests; live checks, if any, are a separate opt-in command (e.g. `make smoke`).
 - Before committing a fixture taken from a real response, replace names, emails, phones and any token or ID
   that grants access to something on its own. Never commit real user files (documents, tickets, uploads).
 - End-to-end checks: drive the built app with a headless browser (Playwright with the system Chrome/Edge;
@@ -148,28 +167,42 @@ and align this project's copies with it:
 
 ## Versions and releases
 
-<!-- Delete if the project isn't versioned. -->
 - Versions are `x.y.z`: `x` major (only when I decide), `y` feature, `z` fix. A feature bumps `y` and resets `z`.
-- The version lives in <FILES>: change it only with `<scripts/set-version.sh x.y.z>`, which updates them all.
+- The server version lives in `backend/src/version.ts` and `backend/package.json` (keep them equal); the
+  Go agent gets its version from the build (`-X main.version=…`, set by `make agent-build` from git).
+  The agent protocol has its own version (see the invariants).
 - Tags and releases only when I ask.
 - CI runs the checks and tests on every push and pull request, but builds and publishes artifacts (Docker
   images, binaries, installers) only on a `vX.Y.Z` tag or a manual run, never on a plain push.
 
 ## Adding a field to an API model
 
-<!-- Delete if the project has no API shared between backend and frontend. -->
-1. Change the type in <the shared contract file>: the type check then points at every place to update.
-2. Backend: migration (append, never edit a released one), repository, validation schema and routes
-   (create **and** update).
+1. Change the type in `shared/src/api.ts` (and the schema in `shared/src/validation.ts`): the type check
+   then points at every place to update.
+2. Backend: migration in `backend/src/db.ts` (append, never edit a released one), the route's SQL and
+   mapping (create **and** update), `backend/API.md`.
 3. Frontend: every view that shows or edits the model.
 4. Tests for the routes (valid value, invalid value, field missing on old rows); update `STRUCTURE.md`.
 
-## <Recipe, e.g. "Adding a <thing>">
+## Adding an agent for a new board
 
-<!-- Step-by-step for extension points that will be repeated (new provider, new step type, new integration…). -->
-1. <Create `<path>` implementing `<Trait>`.>
-2. <Register it in `<file>`.>
-3. <Add tests with fixtures.>
+1. Create `agents/<board-name>/` with its own build system; implement docs/PROTOCOL.md (§12 checklist).
+2. README: hardware, wiring of the outputs, build/flash, configuration; an example config without
+   secrets. Add a row to `agents/README.md`.
+3. Test it against `make dev` with a token from the API; outputs declared in `hello` must show up in
+   `GET /api/houses/:id/agents`.
+
+## Adding an output driver to the Go agent
+
+Drivers (how an output is physically driven: `sim` today, GPIO later) live in `agents/go/internal/outputs/`
+behind the driver interface; the protocol code does not change. Register the driver name accepted in
+the config, validate its options at startup, test it without hardware.
+
+## Adding a login provider preset
+
+Generic OIDC providers need no code (`OAUTH_<ID>_ISSUER`). A preset (only client id/secret needed) is an
+entry in `PRESETS` in `backend/src/config.ts`; a provider that is not OIDC needs its own branch in
+`backend/src/auth/oauth.ts` like GitHub. Document it in `.env.example`.
 
 ## Known pitfalls
 
@@ -177,4 +210,9 @@ and align this project's copies with it:
 - **Git Bash rewrites env values that look like paths** (`BASE_PATH=/x` becomes `C:/Program Files/Git/x`):
   prefix the command with `MSYS2_ENV_CONV_EXCL='*'`, or set the value in `.env`.
 - A running `.exe` locks its binary on Windows: stop it before rebuilding.
-- <Project-specific gotchas: framework quirks, things that look like bugs but are intentional.>
+- `USER` / `USERNAME` are set by the shell: Makefile variables use other names (`ACCOUNT=`).
+- npm blocks esbuild's postinstall script; the build still works through its platform package.
+- Test servers bind port 0 while `PUBLIC_URL` is `http://localhost`: tests send no `Origin`, so the
+  Origin check passes. A test that sets `Origin` must use the configured `PUBLIC_URL`.
+- Hono sub-apps are mounted at `/api` and share the path space: `requireUser` is applied per sub-app, so
+  a route added to the wrong file may end up unauthenticated or doubly authenticated.
