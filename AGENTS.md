@@ -12,7 +12,7 @@ See "Updating these guidelines" below to align them with the latest version.
 Awake: self-hosted remote power control for home devices — Wake-on-LAN and relay outputs (buttons and
 switches) driven by always-on agents in the LAN that keep an outbound WebSocket to a server on a VPS.
 Stack: server Node.js 24 + TypeScript 7 + Hono 4 + SQLite (`node:sqlite`) + `ws`; reference agent Go 1.27;
-microcontroller agents (C++, contributed) under `agents/<board>/`; web UI (Svelte 5 PWA) not started yet.
+microcontroller agents (C++, contributed) under `agents/<board>/`; web UI Svelte 5 + Vite 8 + Tailwind 4 PWA (Material 3).
 Targets: server on Linux (Docker); agents on Windows, Linux, macOS, Raspberry Pi, microcontrollers.
 
 ## Workflow
@@ -131,15 +131,16 @@ and align this project's copies with it:
 - Reuse shared clients and connections (HTTP client, DB pool) instead of creating them per request.
 - **Dependencies are recent majors whose APIs differ from most online examples:** check the docs for the
   installed version before using an API. Ask before adding a new dependency.
-  TypeScript 7 (native compiler), zod 4, Hono 4 with `@hono/node-server` 2, openid-client 6 (functional
+  TypeScript 7 (native compiler; the frontend stays on 6), Svelte 5, Vite 8, Tailwind 4, vite-plugin-pwa 2, zod 4, Hono 4 with `@hono/node-server` 2, openid-client 6 (functional
   API: `discovery`, `authorizationCodeGrant`, no `Issuer`/`Client` classes), Go agent: `coder/websocket`,
   `pro-bing`, `BurntSushi/toml`.
 - Deleting user data means moving it to the trash / soft delete, unless agreed otherwise.
 
 ### UI
 
-The web UI is not started yet: it begins from mockups based on the style of jacopofilonzi.it and
-orario.filonzi.it, to be chosen before writing it.
+Design: Material 3 with the low-chroma "ardesia" palette, chosen from the mockups in `mockups/`
+(git-ignored). Keep colors muted, also in dark mode; the admin area differs only by a muted accent.
+Short creations and edits are dialogs (`components/Dialog.svelte`), not pages.
 
 - Every UI string goes through i18n, with both the English and the Italian key (English is the
   default); the type check must catch a missing key.
@@ -212,6 +213,11 @@ entry in `PRESETS` in `backend/src/config.ts`; a provider that is not OIDC needs
 - A running `.exe` locks its binary on Windows: stop it before rebuilding.
 - `USER` / `USERNAME` are set by the shell: Makefile variables use other names (`ACCOUNT=`).
 - npm blocks esbuild's postinstall script; the build still works through its platform package.
+- The frontend is on TypeScript 6 (svelte-check requires < 7) while the backend is on 7: don't unify them.
+- In dev the UI is on :5173: set `PUBLIC_URL=http://localhost:5173` in `.env`, otherwise the Origin check
+  rejects state-changing requests and login-provider redirects go to the wrong host.
+- Svelte effects that call async loaders must `untrack` reads of state the loader updates (e.g. device
+  statuses), or they loop.
 - Test servers bind port 0 while `PUBLIC_URL` is `http://localhost`: tests send no `Origin`, so the
   Origin check passes. A test that sets `Origin` must use the configured `PUBLIC_URL`.
 - Hono sub-apps are mounted at `/api` and share the path space: `requireUser` is applied per sub-app, so

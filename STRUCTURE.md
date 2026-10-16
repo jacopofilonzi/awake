@@ -2,17 +2,18 @@
 
 Awake: remote power control for home devices. A server on a VPS (users, houses, devices, sharing, log)
 talks over an outbound WebSocket to agents in the LAN, which send Wake-on-LAN packets, probe devices and
-drive relay outputs (buttons and switches). Browsers use the HTTP API (the web UI is not written yet).
+drive relay outputs (buttons and switches). Users use a PWA (Svelte 5, Material 3) served by the server.
 
 ```text
 repo/
 ├── backend/          Node 24 + TypeScript 7 + Hono 4 — HTTP API, agent gateway (ws), SQLite
-├── shared/           TypeScript — API types, error codes, zod validation (backend + future UI)
+├── frontend/         Svelte 5 + Vite 8 + Tailwind 4 — PWA, Material 3 "ardesia" theme, IT/EN
+├── shared/           TypeScript — API types, error codes, zod validation (backend + UI)
 ├── agents/
 │   ├── README.md     list of agents, how to contribute one
 │   └── go/           Go 1.27 — reference agent (PC, Raspberry Pi), simulated outputs
 ├── docs/PROTOCOL.md  agent ↔ server protocol v1: the only contract with the agents
-├── Dockerfile        build stage (npm ci, esbuild) → node:24-alpine running backend/dist/index.js
+├── Dockerfile        build stage (npm ci, vite, esbuild) → node:24-alpine: backend bundle + UI in /app/web
 ├── docker-compose.yml
 ├── .env.example      every supported env var, documented; `.env` is git-ignored
 └── Makefile          dev commands (run `make help`)
@@ -23,7 +24,8 @@ repo/
 ```text
 backend/src/
 ├── index.ts          entry: config, start, bootstrap-admin banner; `reset-password <user>` CLI
-├── app.ts            wiring: db, hub, device service, event bus, Hono app, /agent WebSocket upgrade
+├── app.ts            wiring: db, hub, device service, event bus, Hono app, SPA, /agent WebSocket upgrade
+├── static.ts         serves the built UI (WEB_DIR) with SPA fallback; hashed assets cached forever
 ├── config.ts         env → Config (PUBLIC_URL, registration, OAUTH_* providers, timings)
 ├── log.ts            leveled one-line logger
 ├── db.ts             SQLite schema (append-only migrations), backup before migrating
@@ -80,7 +82,31 @@ still `waking` are closed as `ok` at startup), rate-limit counters, SSE subscrib
 
 Every variable, with defaults and meaning, is in [.env.example](.env.example): `PORT`, `PUBLIC_URL`,
 `TRUST_PROXY`, `DATA_DIR`, `LOG_LEVEL`, `REGISTRATION_ENABLED`, `REGISTRATION_AUTO_APPROVE`,
-`SESSION_TTL_DAYS`, `PASSWORD_LINK_TTL_HOURS`, `OAUTH_PROVIDERS` + `OAUTH_<ID>_{TYPE,ISSUER,CLIENT_ID,CLIENT_SECRET,LABEL,SCOPES}`.
+`SESSION_TTL_DAYS`, `PASSWORD_LINK_TTL_HOURS`, `WEB_DIR`, `OAUTH_PROVIDERS` + `OAUTH_<ID>_{TYPE,ISSUER,CLIENT_ID,CLIENT_SECRET,LABEL,SCOPES}`.
+
+## Web UI (`frontend/src`)
+
+Svelte 5 (runes) PWA, Material 3 with a low-chroma slate palette ("ardesia"); the admin area switches to a
+muted warm scheme (`.scheme-admin`). TypeScript 6 here (svelte-check does not support 7 yet). In dev Vite
+runs on :5173 and proxies `/api` and `/agent` to :8080; in production the backend serves `frontend/dist`.
+
+| Path | Responsibility |
+| --- | --- |
+| `main.ts`, `App.svelte` | mount; route guards (anonymous → /login, forced password change, admin only) |
+| `app.css` | Tailwind 4: color tokens as CSS variables (light, dark, admin) mapped by `@theme inline`; `@utility` components (btn-filled/tonal/outlined/text, card, input…) |
+| `lib/api.ts` | the only fetch layer, typed on `@awake/shared`; `ApiFailure` carries the error code |
+| `lib/router.svelte.ts` | history router (path patterns → route names), `link` action |
+| `lib/session.svelte.ts` | public config + current user, boot, logout |
+| `lib/data.svelte.ts` | houses and devices kept live by `/api/events` (SSE); `version` (per house) and `actions` counters make pages refetch |
+| `lib/i18n/` | `en.ts` defines the keys, `it.ts` must match (type-checked); `errors` must cover every `ErrorCode` |
+| `lib/ui.svelte.ts` | snackbar, promise-based confirm dialog, error → text |
+| `lib/format.ts` | device status/kind/icon, relative times, log lines |
+| `lib/icons.ts` | the Material Symbols used, imported as raw SVG (only those are bundled) |
+| `components/` | AppShell (rail / bottom bar, user or admin), TopBar, Dialog (native `<dialog>`, full-screen on phones), DeviceCard, DeviceActions, Switch, Segmented, Menu, StatusPill, LogList… |
+| `dialogs/` | short creation/edit flows: device, house, agent (+ token shown once), member/share (UsernameDialog), new user, password link |
+| `pages/` | Login, Register, SetPassword (#token), ChangePassword, Home (welcome / redirect), House (+ HouseAgents, HouseMembers), Device, Shared, Activity, Account, admin/Users, admin/Server |
+
+`mockups/` (git-ignored) holds the HTML mockups the design was chosen from.
 
 ## Go agent (`agents/go`)
 

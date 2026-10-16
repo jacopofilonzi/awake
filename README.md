@@ -24,11 +24,13 @@ woken over the network.
 | Path | Content |
 |---|---|
 | [`backend/`](backend/) | Server: HTTP API, agent gateway, SQLite. [API reference](backend/API.md) |
-| [`shared/`](shared/) | API types, error codes and validation shared with the (future) web UI |
+| [`frontend/`](frontend/) | Web UI: installable PWA (Svelte 5, Material 3), Italian and English |
+| [`shared/`](shared/) | API types, error codes and validation shared by backend and web UI |
 | [`agents/`](agents/) | Agents: [`go/`](agents/go/) reference agent (PC, Raspberry Pi); boards to come |
 | [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | Agent ↔ server protocol: the contract every agent implements |
 
-The web UI is not there yet.
+The server also serves the web UI: open `PUBLIC_URL` in a browser, and add it to the home screen to use it
+as an app (installing requires HTTPS).
 
 ## Run the server
 
@@ -72,7 +74,7 @@ Every variable is documented in [.env.example](.env.example).
 
 ## Run an agent
 
-1. Create a house, then an agent in it: `POST /api/houses/:id/agents` (the token is shown once).
+1. In the web UI create a house, then **Agents → New agent**: copy the token (it is shown once).
 2. Run an agent in your LAN with that token: the [Go agent](agents/go/) on a PC or Raspberry Pi, or a
    board-specific one from [agents/](agents/).
 3. Add devices: Wake-on-LAN (MAC + the agents that send the packet) or bound to one of the agent's
@@ -84,19 +86,11 @@ Requires Node.js ≥ 24, Go ≥ 1.27 and `make`. Run `make` to list every task.
 
 ```bash
 make install
-make dev           # backend with reload on http://localhost:8080
-make agent         # Go agent with simulated outputs (creates agents/go/awake-agent.toml first)
-make test          # backend end-to-end tests + agent tests
-make check         # typecheck, go vet, gofmt
-```
-
-Without a UI yet, try the API with any HTTP client keeping cookies, e.g. curl:
-
-```bash
-curl -c jar -H 'content-type: application/json' -d '{"username":"admin","password":"…"}' localhost:8080/api/auth/login
-curl -b jar -c jar -H 'content-type: application/json' -d '{"currentPassword":"…","newPassword":"…"}' localhost:8080/api/auth/password
-curl -b jar -H 'content-type: application/json' -d '{"name":"Home"}' localhost:8080/api/houses
-curl -b jar -H 'content-type: application/json' -d '{"name":"pc"}' localhost:8080/api/houses/<house id>/agents
+cp .env.example .env   # set PUBLIC_URL=http://localhost:5173 (the dev UI address)
+make dev               # backend on :8080 + web UI with hot reload on http://localhost:5173
+make agent             # Go agent with simulated outputs (creates agents/go/awake-agent.toml first)
+make test              # backend end-to-end tests + agent tests
+make check             # typecheck backend and UI, gofmt, go vet, go test
 ```
 
 ## Upgrade notes
