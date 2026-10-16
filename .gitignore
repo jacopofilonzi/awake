@@ -5,3 +5,6 @@ data/
 *.log
 
 # Each agent ignores its own build output and local config (agents/*/.gitignore).
+
+# Mockups are only for choosing: never committed
+mockups/
