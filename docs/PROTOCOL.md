@@ -41,7 +41,8 @@ device data.
   the server is behind an HTTPS reverse proxy. The connection is always initiated by the agent (outbound
   only), so no port needs to be opened on the home router.
 - Every message is a **JSON object in a single text frame**, UTF-8, at most **8 KB**. Binary frames are a
-  protocol error.
+  protocol error: the server closes with `4000`; an agent SHOULD log and ignore binary or malformed
+  frames from the server rather than drop the connection.
 - Every message has a string field `t` (type). Field order does not matter.
 - Receivers **MUST ignore** unknown fields and messages with an unknown `t` (forward compatibility),
   except during the handshake (§3).
@@ -106,6 +107,11 @@ Rules:
   **older** one is closed with `4002`.
 - Every `hello` replaces the outputs the server knows for this agent. Switch states in `hello` are the
   truth: if a switch changed while the agent was offline, the server learns it here.
+- If the agent's first received message is not a valid `welcome`, or its `v` is not one the agent
+  implements, the agent closes with `1002` and reconnects with normal backoff (§8).
+- If `hb` is missing, not a positive integer or unreasonably large (over 600), the agent uses 20.
+- A switch that changes between the `hello` and the `welcome` is reported with `out_state` right after
+  the `welcome`.
 
 ## 4. Commands
 
@@ -121,7 +127,8 @@ Every command except `probe` is answered with an `ack`:
 ```
 
 - `err` is a short machine-friendly reason, max 64 chars, shown to the device owner. Recommended values:
-  `unknown output`, `wrong mode`, `no long press`, `busy`, `send failed`, `invalid`.
+  `unknown output`, `wrong mode`, `no long press`, `busy`, `send failed` (magic packet), `output failed`
+  (the hardware/driver could not drive the output), `invalid` (malformed command).
 - The `ack` **MUST** arrive within **5 seconds**, otherwise the server records a timeout for this agent.
 - The agent **MUST NOT** queue or replay commands across reconnections: a command received on a
   connection that then drops is simply lost. The server never re-sends commands.
@@ -146,7 +153,7 @@ verifies that with probes.
 |---|---|
 | `ip` | IPv4 address on the agent's LAN. |
 | `port` | Optional. When present, do a TCP connect to this port instead of an ICMP echo. |
-| `timeout` | Milliseconds to wait for an answer. |
+| `timeout` | Milliseconds to wait for an answer (integer). Always sent by the server; agents SHOULD clamp it to 100–30000 and use 2000 if missing. |
 
 The agent performs **one** check and replies with `probe_result` (not `ack`):
 
@@ -157,8 +164,8 @@ The agent performs **one** check and replies with `probe_result` (not `ack`):
 | Field | Meaning |
 |---|---|
 | `up` | `true` if the host answered. |
-| `ms` | Optional round-trip time. |
-| `err` | Optional. Set when the check **could not be performed** (e.g. ICMP not supported by the board). The server treats it as "not up". |
+| `ms` | Optional round-trip time, integer milliseconds (0 is possible on a fast LAN). |
+| `err` | Optional. Set when the check **could not be performed**: `icmp unsupported`, `invalid` (bad IP/port), `probe failed` (any other local error). The server treats it as "not up". |
 
 How to decide `up`:
 - **ICMP** (no `port`): one echo request; `up` when an echo reply arrives within `timeout`.
@@ -249,12 +256,14 @@ The agent **MUST** reconnect automatically forever (except after `4004`) using e
 - reset to 1 s after a successful `welcome`;
 - apply **±20 % random jitter** to every delay, so that many agents do not reconnect at the same instant
   after a server restart;
-- the special delays of §7 take precedence.
+- the special delays of §7 take precedence; they are minimums, so their jitter only goes up (0 to +20 %).
 
 The agent SHOULD also reconnect when its network link comes back (e.g. Wi-Fi reassociation) and SHOULD
 use a hardware watchdog so that a stuck TLS/Wi-Fi stack ends in a reboot rather than a silent hang.
 
-Outputs keep working while the agent is disconnected: a local button still toggles its switch.
+Outputs keep working while the agent is disconnected: a local button still toggles its switch. When the
+agent shuts down, a button being pressed is released; switches are left as they are (what they do
+across a power cycle is the board's choice, and the next `hello` reports it).
 
 ## 9. Wake-on-LAN magic packet
 
