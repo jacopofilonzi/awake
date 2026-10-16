@@ -1,0 +1,19 @@
+{
+  "name": "awake",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "backend"
+  ],
+  "scripts": {
+    "dev": "npm run dev -w backend",
+    "build": "npm run build -w backend",
+    "check": "npm run check -w backend",
+    "test": "npm run test -w backend",
+    "start": "npm run start -w backend"
+  },
+  "engines": {
+    "node": ">=24"
+  }
+}
