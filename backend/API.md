@@ -82,7 +82,7 @@ Admins manage accounts, not data: they do not see other users' houses or devices
 | POST | `/admin/users` | `{ username, admin?, credentials: { type: "password", password } \| { type: "link" } }` | `201 { user, link? }`. With a password the user must change it at first login; with `link` the response carries a one-time set-password URL (shown only here) |
 | PATCH | `/admin/users/:id` | `{ username?, admin?, status?: "active" \| "disabled" }` | `AdminUser`. Approve a pending user with `status: "active"`; disabling ends their sessions |
 | POST | `/admin/users/:id/password-link` | | `PasswordLink` `{ url, expiresAt }` — invite again or reset a password; previous links stop working |
-| DELETE | `/admin/users/:id` | | 204. Houses where they were the only owner are deleted with everything in them |
+| DELETE | `/admin/users/:id` | | 204. Every house they own (also co-owned ones) is deleted with everything in it |
 
 `LAST_ADMIN`: the last active admin cannot be demoted, disabled or deleted. `CANNOT_TARGET_SELF`:
 admins cannot demote, disable or delete themselves.

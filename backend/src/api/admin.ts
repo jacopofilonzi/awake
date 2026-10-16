@@ -97,27 +97,31 @@ export function adminRoutes(s: Services) {
   });
 
   /**
-   * Deletes the user. Houses where they are the only owner are deleted with everything in them
-   * (agents disconnected); houses with other owners are kept.
+   * Deletes the user together with every house they own (as owner, even shared with other owners),
+   * with everything in them: agents (disconnected), devices, shares, log. Their memberships in other
+   * people's houses and the devices shared with them just disappear.
    */
   app.delete("/users/:id", (c) => {
     const user = target(c.req.param("id"));
     if (user.id === c.var.auth.user.id) throw new ApiError(400, "CANNOT_TARGET_SELF");
     keepsAnAdmin(user);
 
-    const orphaned = db
-      .prepare(
-        `SELECT house_id FROM house_members hm WHERE user_id = ? AND role = 'owner'
-         AND NOT EXISTS (SELECT 1 FROM house_members o WHERE o.house_id = hm.house_id AND o.role = 'owner' AND o.user_id != ?)`,
-      )
-      .all(user.id, user.id) as { house_id: string }[];
-    const agents = orphaned.flatMap(
-      (h) => db.prepare("SELECT id FROM agents WHERE house_id = ?").all(h.house_id) as { id: string }[],
+    const owned = db.prepare("SELECT house_id FROM house_members WHERE user_id = ? AND role = 'owner'").all(user.id) as { house_id: string }[];
+    const agents = owned.flatMap((h) => db.prepare("SELECT id FROM agents WHERE house_id = ?").all(h.house_id) as { id: string }[]);
+    // Everyone who could see those houses, or devices in them, must refresh.
+    const audience = new Set(
+      owned.flatMap((h) => [
+        ...bus.houseAudience(h.house_id),
+        ...(
+          db
+            .prepare("SELECT DISTINCT s.user_id FROM device_shares s JOIN devices d ON d.id = s.device_id WHERE d.house_id = ?")
+            .all(h.house_id) as { user_id: string }[]
+        ).map((r) => r.user_id),
+      ]),
     );
-    const audience = new Set(orphaned.flatMap((h) => bus.houseAudience(h.house_id)));
 
     transaction(db, () => {
-      for (const h of orphaned) db.prepare("DELETE FROM houses WHERE id = ?").run(h.house_id);
+      for (const h of owned) db.prepare("DELETE FROM houses WHERE id = ?").run(h.house_id);
       db.prepare("DELETE FROM users WHERE id = ?").run(user.id);
     });
     for (const a of agents) hub.disconnect(a.id);
@@ -125,7 +129,7 @@ export function adminRoutes(s: Services) {
     audience.delete(user.id);
     bus.toUsers(audience, { type: "houses" });
     bus.toUsers(audience, { type: "devices" });
-    log.info("admin", "user deleted", { by: c.var.auth.user.username, user: user.username, housesDeleted: orphaned.length });
+    log.info("admin", "user deleted", { by: c.var.auth.user.username, user: user.username, housesDeleted: owned.length });
     return c.body(null, 204);
   });
 

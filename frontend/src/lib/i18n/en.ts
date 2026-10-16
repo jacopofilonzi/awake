@@ -331,7 +331,7 @@ export const en = {
       linkText: "Send this link to {name}: it works once, until {expires}.",
       linkOnce: "It won't be shown again. A new link invalidates this one.",
       deleteTitle: "Delete user?",
-      deleteText: "{name} will be deleted. Houses where they are the only owner are deleted too, with everything inside.",
+      deleteText: "{name} will be deleted together with every house they own (even when shared with other owners) and everything inside: agents, devices, shares and log.",
       deleted: "{name} deleted",
     },
     server: {

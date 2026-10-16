@@ -109,12 +109,24 @@ describe("admin user management", () => {
     assert.equal((await s.admin.req("POST", "/admin/users", { username: "a b", credentials: { type: "link" } })).body.error, "INVALID_USERNAME");
   });
 
-  test("deleting a user deletes the houses they owned alone", async () => {
+  test("deleting a user deletes every house they own, also co-owned ones", async () => {
     const u = await createUser(s, "leaving");
-    const house = await u.req("POST", "/houses", { name: "Mine" });
-    assert.equal(house.status, 201);
+    const other = await createUser(s, "staying");
+    const mine = (await u.req("POST", "/houses", { name: "Mine" })).body;
+    const coOwned = (await u.req("POST", "/houses", { name: "Shared ownership" })).body;
+    await u.req("POST", `/houses/${coOwned.id}/members`, { username: "staying", role: "owner" });
+    const theirs = (await other.req("POST", "/houses", { name: "Theirs" })).body;
+    await other.req("POST", `/houses/${theirs.id}/members`, { username: "leaving", role: "member" });
+
     assert.equal((await s.admin.req("DELETE", `/admin/users/${u.id}`)).status, 204);
     assert.equal((await s.admin.req("GET", "/admin/users")).body.some((x: any) => x.username === "leaving"), false);
+    const left = (await other.req("GET", "/houses")).body.map((h: any) => h.id);
+    assert.deepEqual(left, [theirs.id]);
+    assert.ok(!left.includes(mine.id) && !left.includes(coOwned.id));
+    assert.deepEqual(
+      (await other.req("GET", `/houses/${theirs.id}/members`)).body.map((m: any) => m.username),
+      ["staying"],
+    );
   });
 });
 

@@ -284,7 +284,7 @@ export const it: Messages = {
       linkText: "Invia questo link a {name}: funziona una volta sola, fino a {expires}.",
       linkOnce: "Non sarà più mostrato. Un nuovo link invalida questo.",
       deleteTitle: "Eliminare l'utente?",
-      deleteText: "{name} verrà eliminato. Anche le case di cui è l'unico owner vengono eliminate, con tutto il contenuto.",
+      deleteText: "{name} verrà eliminato insieme a tutte le case di cui è owner (anche se condivise con altri owner) e a tutto il loro contenuto: agent, dispositivi, condivisioni e log.",
       deleted: "{name} eliminato",
     },
     server: {
