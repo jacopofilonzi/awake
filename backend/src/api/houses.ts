@@ -2,7 +2,21 @@
 
 import { Hono } from "hono";
 import { z } from "zod";
-import { nameSchema, roleSchema, usernameSchema, type Agent, type AgentOutput, type AgentWithToken, type House, type HouseMember, type Role } from "@awake/shared";
+import {
+  HOUSE_ICONS,
+  houseInputSchema,
+  housePatchSchema,
+  nameSchema,
+  roleSchema,
+  usernameSchema,
+  type Agent,
+  type AgentOutput,
+  type AgentWithToken,
+  type House,
+  type HouseIcon,
+  type HouseMember,
+  type Role,
+} from "@awake/shared";
 import { atLeast, requireHouse } from "../access.ts";
 import { agentDetails } from "../agents/details.ts";
 import { loadUserByName } from "../auth/users.ts";
@@ -29,9 +43,9 @@ export function houseRoutes(s: Services) {
 
   const toHouse = (houseId: string, userId: string): House => {
     const row = db
-      .prepare("SELECT h.id, h.name, h.created_at, hm.role FROM houses h JOIN house_members hm ON hm.house_id = h.id WHERE h.id = ? AND hm.user_id = ?")
-      .get(houseId, userId) as { id: string; name: string; created_at: number; role: Role };
-    return { id: row.id, name: row.name, role: row.role, createdAt: row.created_at };
+      .prepare("SELECT h.id, h.name, h.icon, h.created_at, hm.role FROM houses h JOIN house_members hm ON hm.house_id = h.id WHERE h.id = ? AND hm.user_id = ?")
+      .get(houseId, userId) as unknown as HouseRow;
+    return houseView(row);
   };
 
   /** `withDetails`: the viewer is an owner or editor of the house (diagnostics are theirs only). */
@@ -85,17 +99,17 @@ export function houseRoutes(s: Services) {
 
   app.get("/houses", (c) => {
     const rows = db
-      .prepare("SELECT h.id, h.name, h.created_at, hm.role FROM houses h JOIN house_members hm ON hm.house_id = h.id WHERE hm.user_id = ? ORDER BY h.name")
-      .all(c.var.auth.user.id) as { id: string; name: string; created_at: number; role: Role }[];
-    return c.json(rows.map((r): House => ({ id: r.id, name: r.name, role: r.role, createdAt: r.created_at })));
+      .prepare("SELECT h.id, h.name, h.icon, h.created_at, hm.role FROM houses h JOIN house_members hm ON hm.house_id = h.id WHERE hm.user_id = ? ORDER BY h.name")
+      .all(c.var.auth.user.id) as unknown as HouseRow[];
+    return c.json(rows.map(houseView));
   });
 
   app.post("/houses", async (c) => {
-    const { name } = await readBody(c, z.object({ name: nameSchema }));
+    const { name, icon } = await readBody(c, houseInputSchema);
     const id = newId();
     const now = Date.now();
     transaction(db, () => {
-      db.prepare("INSERT INTO houses (id, name, created_at) VALUES (?, ?, ?)").run(id, name, now);
+      db.prepare("INSERT INTO houses (id, name, icon, created_at) VALUES (?, ?, ?, ?)").run(id, name, icon, now);
       db.prepare("INSERT INTO house_members (house_id, user_id, role, created_at) VALUES (?, ?, 'owner', ?)").run(id, c.var.auth.user.id, now);
     });
     return c.json(toHouse(id, c.var.auth.user.id), 201);
@@ -104,8 +118,8 @@ export function houseRoutes(s: Services) {
   app.patch("/houses/:id", async (c) => {
     const houseId = c.req.param("id");
     requireHouse(db, c.var.auth.user.id, houseId, "owner");
-    const { name } = await readBody(c, z.object({ name: nameSchema }));
-    db.prepare("UPDATE houses SET name = ? WHERE id = ?").run(name, houseId);
+    const { name, icon } = await readBody(c, housePatchSchema);
+    db.prepare("UPDATE houses SET name = COALESCE(?, name), icon = COALESCE(?, icon) WHERE id = ?").run(name ?? null, icon ?? null, houseId);
     notifyHouseChange(houseId, sharedUsers(houseId));
     return c.json(toHouse(houseId, c.var.auth.user.id));
   });
@@ -250,3 +264,20 @@ export function houseRoutes(s: Services) {
 
   return app;
 }
+
+interface HouseRow {
+  id: string;
+  name: string;
+  icon: string;
+  created_at: number;
+  role: Role;
+}
+
+// An icon dropped from HOUSE_ICONS in a later version must not break old rows.
+const houseView = (r: HouseRow): House => ({
+  id: r.id,
+  name: r.name,
+  icon: (HOUSE_ICONS as readonly string[]).includes(r.icon) ? (r.icon as HouseIcon) : "house",
+  role: r.role,
+  createdAt: r.created_at,
+});

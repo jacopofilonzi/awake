@@ -2,6 +2,7 @@
 // errors become ApiFailure carrying the stable error code, translated by the UI.
 
 import type {
+  HouseIcon,
   ActionResponse,
   AdminProvider,
   AdminUser,
@@ -96,8 +97,8 @@ export const api = {
 
   houses: {
     list: () => get<House[]>("/houses"),
-    create: (name: string) => post<House>("/houses", { name }),
-    rename: (houseId: string, name: string) => patch<House>(`/houses/${id(houseId)}`, { name }),
+    create: (name: string, icon: HouseIcon) => post<House>("/houses", { name, icon }),
+    update: (houseId: string, changes: { name?: string; icon?: HouseIcon }) => patch<House>(`/houses/${id(houseId)}`, changes),
     remove: (houseId: string) => del(`/houses/${id(houseId)}`),
     members: (houseId: string) => get<HouseMember[]>(`/houses/${id(houseId)}/members`),
     addMember: (houseId: string, username: string, role: Role) => post<HouseMember[]>(`/houses/${id(houseId)}/members`, { username, role }),

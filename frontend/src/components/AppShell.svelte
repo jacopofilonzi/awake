@@ -6,7 +6,7 @@
   // The admin area uses the same shell with its own destinations and the slate accent.
   import type { Snippet } from "svelte";
   import HouseDialog from "../dialogs/HouseDialog.svelte";
-  import type { IconName } from "../lib/icons.ts";
+  import { HOUSE_ICON, type IconName } from "../lib/icons.ts";
   import { data, lastHouse } from "../lib/data.svelte.ts";
   import { isLit } from "../lib/format.ts";
   import { t } from "../lib/i18n/index.svelte.ts";
@@ -106,7 +106,7 @@
           class="flex items-center gap-2.5 rounded-[14px] p-2 text-sm font-semibold transition-colors {on ? 'bg-surface-1 text-on-surface shadow-soft dark:bg-glass-strong' : 'text-on-surface-variant hover:bg-glass-strong'}"
           aria-current={on ? "page" : undefined}
         >
-          <span class="grid size-8 shrink-0 place-items-center rounded-[10px] {on ? 'bg-primary-container text-on-primary-container' : 'bg-glass-strong'}"><Icon name="home" size={17} /></span>
+          <span class="grid size-8 shrink-0 place-items-center rounded-[10px] {on ? 'bg-primary-container text-on-primary-container' : 'bg-glass-strong'}"><Icon name={HOUSE_ICON[h.icon]} size={17} /></span>
           <span class="min-w-0 flex-1 truncate">{h.name}</span>
           <span class="text-xs font-medium text-muted" title={t("nav.devicesOn", c)}>{c.on}/{c.n}</span>
         </a>

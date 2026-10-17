@@ -111,9 +111,9 @@ uses devices).
 
 | Method | Path | Body | Response | Who |
 |---|---|---|---|---|
-| GET | `/houses` | | `House[]` `{ id, name, role, createdAt }` | |
-| POST | `/houses` | `{ name }` | `201 House` (caller is owner) | anyone |
-| PATCH | `/houses/:id` | `{ name }` | `House` | owner |
+| GET | `/houses` | | `House[]` `{ id, name, icon, role, createdAt }` | |
+| POST | `/houses` | `{ name, icon? }` | `201 House` (caller is owner) | anyone |
+| PATCH | `/houses/:id` | `{ name?, icon? }` (at least one) | `House` | owner |
 | DELETE | `/houses/:id` | | 204 — agents disconnected, devices, shares and log deleted | owner |
 | GET | `/houses/:id/members` | | `HouseMember[]` | member |
 | POST | `/houses/:id/members` | `{ username, role }` | `201 HouseMember[]`. Replaces direct shares of the house's devices | owner |
@@ -121,6 +121,10 @@ uses devices).
 | DELETE | `/houses/:id/members/:userId` | | 204 | owner, or the member leaving |
 
 `LAST_OWNER`: a house always keeps at least one owner.
+
+`icon` is one of `HOUSE_ICONS` (`shared/src/api.ts`): `house` (default), `building-2`, `building`,
+`house-heart`, `waves`, `mountain`, `trees`, `store`, `warehouse`, `wrench`, `server`, `school`; anything else
+is `400 VALIDATION`.
 
 ## Agents
 

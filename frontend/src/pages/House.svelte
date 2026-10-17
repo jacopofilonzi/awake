@@ -13,6 +13,7 @@
   import { api } from "../lib/api.ts";
   import { checkDevices, data, reloadHouses, rememberHouse } from "../lib/data.svelte.ts";
   import { isLit } from "../lib/format.ts";
+  import { HOUSE_ICON } from "../lib/icons.ts";
   import { t } from "../lib/i18n/index.svelte.ts";
   import { link, navigate, router } from "../lib/router.svelte.ts";
   import { session } from "../lib/session.svelte.ts";
@@ -91,18 +92,19 @@
     <div class="p-6"><p class="text-on-surface-variant">{t("errors.NOT_FOUND")}</p><a class="btn-text mt-2" href="/" use:link>{t("common.back")}</a></div>
   {:else}
     <header class="px-4 pt-4 md:px-3 md:pt-5">
-      <div class="flex flex-wrap items-end justify-between gap-3">
-        <div class="min-w-0">
+      <div class="flex items-end justify-between gap-3">
+        <div class="min-w-0 flex-1">
           <Menu title={t("nav.houses")}>
             {#snippet trigger(toggle, open)}
               <button class="flex max-w-full items-center gap-2 text-left" onclick={toggle} aria-expanded={open} aria-haspopup="menu">
-                <h1 class="truncate text-[2rem] leading-tight md:text-[2.6rem]">{house.name}</h1>
+                <span class="grid size-10 shrink-0 place-items-center rounded-xl border border-glass-line bg-glass-strong text-on-surface shadow-soft md:size-12"><Icon name={HOUSE_ICON[house.icon]} size={22} /></span>
+                <h1 class="truncate text-[1.75rem] leading-tight sm:text-[2rem] md:text-[2.6rem]">{house.name}</h1>
                 <span class="grid size-8 shrink-0 place-items-center rounded-full bg-glass-strong text-muted"><Icon name="arrow-drop-down" size={18} /></span>
               </button>
             {/snippet}
             {#each data.houses as h (h.id)}
               {@const ds = data.devicesOf(h.id)}
-              <MenuItem label={h.name} icon="home" href="/houses/{h.id}" selected={h.id === id} detail="{t('nav.devicesOn', { on: ds.filter(isLit).length, n: ds.length })} · {t(`roles.${h.role}`)}">
+              <MenuItem label={h.name} icon={HOUSE_ICON[h.icon]} href="/houses/{h.id}" selected={h.id === id} detail="{t('nav.devicesOn', { on: ds.filter(isLit).length, n: ds.length })} · {t(`roles.${h.role}`)}">
                 {#snippet trailing()}{#if h.id === id}<Icon name="check" size={18} class="text-primary" />{/if}{/snippet}
               </MenuItem>
             {/each}
@@ -120,7 +122,7 @@
           <Menu align="right">
             {#snippet trigger(toggle)}<button class="icon-btn" onclick={toggle} aria-label={t("common.more")}><Icon name="more" /></button>{/snippet}
             {#if house.role === "owner"}
-              <MenuItem label={t("house.renameTitle")} icon="edit" onclick={() => (houseDialog = "rename")} />
+              <MenuItem label={t("house.editTitle")} icon="edit" onclick={() => (houseDialog = "rename")} />
               <MenuItem label={t("house.deleteTitle")} icon="delete" danger onclick={removeHouse} />
             {:else}
               <MenuItem label={t("house.leave")} icon="logout" danger onclick={leaveHouse} />

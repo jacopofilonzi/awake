@@ -2,6 +2,7 @@
 // A zod issue whose message is an ErrorCode is reported as that code, anything else as VALIDATION.
 
 import { z } from "zod";
+import { HOUSE_ICONS } from "./api.ts";
 import type { ErrorCode } from "./errors.ts";
 
 const code = (c: ErrorCode) => ({ message: c });
@@ -25,6 +26,13 @@ export const passwordSchema = z
   .max(PASSWORD_MAX_LENGTH, code("INVALID_PASSWORD"));
 
 export const nameSchema = z.string().trim().min(1).max(NAME_MAX_LENGTH);
+
+export const houseIconSchema = z.enum(HOUSE_ICONS);
+export const houseInputSchema = z.object({ name: nameSchema, icon: houseIconSchema.default("house") });
+/** PATCH /houses/:id: name and/or icon. */
+export const housePatchSchema = z
+  .object({ name: nameSchema.optional(), icon: houseIconSchema.optional() })
+  .refine((h) => h.name !== undefined || h.icon !== undefined, code("VALIDATION"));
 
 export const roleSchema = z.enum(["owner", "editor", "member"]);
 

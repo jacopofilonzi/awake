@@ -83,7 +83,7 @@ All under `/api`; full reference in [backend/API.md](backend/API.md). Summary:
 SQLite at `$DATA_DIR/awake.db` (WAL), schema in `backend/src/db.ts`; backups `awake.db.bak-v<n>-<time>`
 are written next to it before each migration. Durable: settings (key → JSON), login providers (client
 secret sealed with `SECRET_KEY`), users, identities, sessions, password links,
-OAuth states (10 min), houses/members, agents (with the last info reported), agent outputs (as last declared), agent sessions (one row per
+OAuth states (10 min), houses (name, icon)/members, agents (with the last info reported), agent outputs (as last declared), agent sessions (one row per
 connection: ip, start, end, close code; closed rows pruned after 7 days, rows left open by a crash closed
 at startup with 1001), devices, shares, action
 log. In memory only: agent connections, reachability results and check loops (lost on restart: actions

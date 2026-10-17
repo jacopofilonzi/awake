@@ -139,9 +139,14 @@ export interface ProviderDeleted {
 /** owner: everything, members included. editor: agents and devices. member: sees and uses devices. */
 export type Role = "owner" | "editor" | "member";
 
+/** Icons a house can have, to tell houses apart at a glance (Lucide names; the UI maps them). */
+export const HOUSE_ICONS = ["house", "building-2", "building", "house-heart", "waves", "mountain", "trees", "store", "warehouse", "wrench", "server", "school"] as const;
+export type HouseIcon = (typeof HOUSE_ICONS)[number];
+
 export interface House {
   id: string;
   name: string;
+  icon: HouseIcon;
   role: Role;
   createdAt: Millis;
 }
