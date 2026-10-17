@@ -14,6 +14,8 @@ repo/
 │   ├── go/           Go 1.27 — reference agent (PC, Raspberry Pi), simulated outputs
 │   └── arduino-mkr-wifi-1010/  C++ (arduino-cli) — firmware for the MKR WiFi 1010, GPIO outputs
 ├── docs/PROTOCOL.md  agent ↔ server protocol v1: the only contract with the agents
+├── .github/workflows ci.yml (make check + make test on push/PR); release.yml (vX.Y.Z tag: checks,
+│                     tag = server version, Docker image to ghcr.io/jacopofilonzi/awake, amd64 + arm64)
 ├── Dockerfile        build stage (npm ci, vite, esbuild) → node:24-alpine: backend bundle + UI in /app/web
 ├── docker-compose.yml
 ├── .env.example      every supported env var, documented; `.env` is git-ignored

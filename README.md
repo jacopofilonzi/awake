@@ -40,6 +40,10 @@ make up                 # docker compose up -d --build
 make logs               # the first start prints the admin password
 ```
 
+Or use the published image instead of building it: in `docker-compose.yml` replace `build: .` with
+`image: ghcr.io/jacopofilonzi/awake:latest` (or a version, e.g. `:0.1`), then `docker compose up -d`.
+Images are built for `linux/amd64` and `linux/arm64`.
+
 On the first start Awake creates the user **`admin`** with a random password, printed once in the logs;
 it must be changed at the first login. Lost it?
 
@@ -96,6 +100,19 @@ make agent             # Go agent with simulated outputs (creates agents/go/awak
 make test              # backend end-to-end tests + agent tests
 make check             # typecheck backend and UI, gofmt, go vet, go test
 ```
+
+## Releasing
+
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `make check` and `make test` on every push
+to `main` and on pull requests. To publish a version, bump it in `backend/src/version.ts` and
+`backend/package.json`, commit, then tag it:
+
+```bash
+git tag v0.2.0 && git push origin v0.2.0
+```
+
+The tag runs [`release.yml`](.github/workflows/release.yml): the same checks, a check that the tag matches
+the server version, then the Docker image `ghcr.io/jacopofilonzi/awake` tagged `0.2.0`, `0.2` and `latest`.
 
 ## Upgrade notes
 

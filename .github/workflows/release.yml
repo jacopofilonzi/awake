@@ -1,0 +1,61 @@
+# Builds and publishes the server's Docker image (ghcr.io/<owner>/awake) when a vX.Y.Z tag is pushed,
+# after the same checks as CI. A manual run builds the current branch and tags the image with its name.
+#   git tag v0.2.0 && git push origin v0.2.0
+name: Release
+
+on:
+  push:
+    tags: ["v*.*.*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    uses: ./.github/workflows/ci.yml
+
+  image:
+    needs: check
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v7
+
+      # The tag is the server version: both places that hold it must agree (AGENTS.md, "Versions").
+      - name: Tag matches the server version
+        if: github.ref_type == 'tag'
+        run: |
+          v=$(node -p "require('./backend/package.json').version")
+          if [ "v$v" != "$GITHUB_REF_NAME" ]; then echo "::error::tag $GITHUB_REF_NAME, but backend/package.json says $v"; exit 1; fi
+          if ! grep -q "\"$v\"" backend/src/version.ts; then echo "::error::backend/src/version.ts is not $v"; exit 1; fi
+
+      - uses: docker/setup-qemu-action@v4
+      - uses: docker/setup-buildx-action@v4
+      - uses: docker/login-action@v4
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # vX.Y.Z → X.Y.Z, X.Y and latest; a manual run → the branch name.
+      - id: meta
+        uses: docker/metadata-action@v6
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=ref,event=branch
+
+      - uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
