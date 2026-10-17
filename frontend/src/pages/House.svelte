@@ -86,7 +86,7 @@
   ]);
 </script>
 
-<AppShell area="app" fab={canEdit && tab === "house" ? newDeviceFab : undefined}>
+<AppShell area="app">
   {#if !data.loaded}
     <p class="p-6 text-sm text-muted">{t("common.loading")}</p>
   {:else if !house}
@@ -146,7 +146,7 @@
             {#if canEdit}<button class="btn-tonal" onclick={() => (deviceDialog = true)}><Icon name="add" size={20} />{t("device.form.newTitle")}</button>{/if}
           </div>
         {:else}
-          <div class="grid grid-cols-2 gap-3 md:grid-cols-[repeat(auto-fill,minmax(15.5rem,1fr))]">
+          <div class="grid grid-cols-2 gap-3 max-md:pb-16 md:grid-cols-[repeat(auto-fill,minmax(15.5rem,1fr))]">
             {#each devices as d (d.id)}<DeviceCard device={d} />{/each}
           </div>
         {/if}
@@ -161,9 +161,17 @@
   {/if}
 </AppShell>
 
-{#snippet newDeviceFab()}
-  <button class="grid h-12 w-14 place-items-center rounded-2xl bg-primary text-on-primary" onclick={() => (deviceDialog = true)} aria-label={t("device.form.newTitle")}><Icon name="add" size={22} /></button>
-{/snippet}
+{#if house && canEdit && tab === "house"}
+  <!-- phones: the page's main action floats above the dock, bottom right (wide screens have the header button) -->
+  <button
+    class="fixed right-4 bottom-[5.75rem] z-20 grid size-14 place-items-center rounded-2xl bg-primary text-on-primary shadow-[0_6px_22px_-4px_var(--md-glow)] md:hidden"
+    onclick={() => (deviceDialog = true)}
+    aria-label={t("device.form.newTitle")}
+    title={t("device.form.newTitle")}
+  >
+    <Icon name="add" size={24} />
+  </button>
+{/if}
 
 {#if house}
   <DeviceDialog open={deviceDialog} houseId={house.id} houseName={house.name} onclose={() => (deviceDialog = false)} />

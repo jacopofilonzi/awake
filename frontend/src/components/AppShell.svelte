@@ -1,7 +1,7 @@
 <script lang="ts">
   // Navigation. Wide screens: a floating glass sidebar with the houses (devices on / total), your
   // pages, administration and the account. Phones: a slim header (logo, theme, account menu) and a
-  // floating dock at the bottom; a page can put its main action in the middle of the dock (`fab`).
+  // floating dock at the bottom (navigation only: page actions float above it, bottom right).
   // The admin area uses the same shell with its own destinations and the slate accent.
   import type { Snippet } from "svelte";
   import HouseDialog from "../dialogs/HouseDialog.svelte";
@@ -16,7 +16,7 @@
   import Menu from "./Menu.svelte";
   import MenuItem from "./MenuItem.svelte";
 
-  let { area, children, fab }: { area: "app" | "admin"; children: Snippet; fab?: Snippet } = $props();
+  let { area, children }: { area: "app" | "admin"; children: Snippet } = $props();
 
   interface Dest {
     href: string;
@@ -158,9 +158,8 @@
 
   <!-- phones: dock -->
   <nav class="glass fixed bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-1 rounded-[22px] p-1.5 md:hidden" aria-label={t("nav.main")}>
-    {#each area === "admin" ? adminDests : appDock as d, i (d.href)}
+    {#each area === "admin" ? adminDests : appDock as d (d.href)}
       {@const on = d.routes.includes(route)}
-      {#if i === 2 && fab}{@render fab()}{/if}
       <a
         href={d.href}
         use:link
@@ -172,7 +171,6 @@
         <Icon name={d.icon} size={22} />
       </a>
     {/each}
-    {#if area === "admin" && fab}{@render fab()}{/if}
   </nav>
 </div>
 

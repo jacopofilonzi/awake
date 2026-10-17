@@ -110,7 +110,7 @@ runs on :5173, listening on the LAN (`host: true`: board agents and phones conne
 | `lib/format.ts` | device status/kind/icon, relative times, log lines |
 | `lib/icons.ts` | the Lucide icons used (UI names → `lucide-static` SVGs, imported raw: only those are bundled) |
 | `lib/actions.ts` | runs a device action (long-press confirmation, API, status into the store, errors) for tiles and the device page |
-| `components/` | AppShell (glass sidebar with houses, or phone header + dock with an optional page action; user or admin), TopBar, Dialog (native `<dialog>`, bottom sheet on phones), DeviceCard (tile with the glowing power button), DeviceActions, Switch, Segmented, Menu (popover, bottom sheet on phones), StatusPill, LogList… |
+| `components/` | AppShell (glass sidebar with houses, or phone header + navigation dock; user or admin), TopBar, Dialog (native `<dialog>`, bottom sheet on phones), DeviceCard (tile with the glowing power button), DeviceActions, Switch, Segmented, Menu (popover, bottom sheet on phones), StatusPill, LogList… |
 | `dialogs/` | short creation/edit flows: device, house, agent (+ token shown once), member/share (UsernameDialog), new user, password link, login provider (ProviderDialog: presets Google/Microsoft/GitHub/Authentik/Keycloak) |
 | `pages/` | Login, Register, SetPassword (#token), ChangePassword, Home (welcome / redirect), House (+ HouseAgents, HouseMembers), Device, Shared, Activity, Account, admin/Users (flags accounts with no way to log in), admin/Server (registration settings, login providers) |
 
