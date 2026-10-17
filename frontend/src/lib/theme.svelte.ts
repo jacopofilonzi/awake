@@ -14,7 +14,7 @@ export const theme = $state<{ choice: ThemeChoice }>({
 function apply(): void {
   const dark = theme.choice === "dark" || (theme.choice === "system" && media.matches);
   document.documentElement.dataset.theme = dark ? "dark" : "light";
-  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#111316" : "#f8f9fb");
+  document.querySelector('meta[name="theme-color"]')?.setAttribute("content", dark ? "#12100d" : "#efebe4");
 }
 
 media.addEventListener("change", apply);

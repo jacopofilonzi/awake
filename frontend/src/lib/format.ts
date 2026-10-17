@@ -61,3 +61,8 @@ export function logLine(e: LogEntry): { action: string; who: string; outcome: { 
       : t(`log.outcome.${e.outcome}` as Key);
   return { action, who, outcome: { tone, label } };
 }
+
+/** Whether a device counts as on (reachable, or a switch that is on): it lights up in the UI. */
+export function isLit(d: Device): boolean {
+  return deviceState(d).tone === "ok";
+}

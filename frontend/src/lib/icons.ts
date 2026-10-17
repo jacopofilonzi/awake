@@ -1,80 +1,76 @@
-// Material Symbols (rounded, weight 400) used by the UI, imported as raw SVG so only these end up in
-// the bundle. Add a name here to use it with <Icon name="…" />.
+// Lucide icons used by the UI, imported as raw SVG so only these end up in the bundle. The keys are
+// the UI's own names (stable when an icon is swapped). Add a name here to use it with <Icon name="…" />.
 
-import add from "@material-symbols/svg-400/rounded/add.svg?raw";
-import adminPanel from "@material-symbols/svg-400/rounded/admin_panel_settings.svg?raw";
-import arrowBack from "@material-symbols/svg-400/rounded/arrow_back.svg?raw";
-import arrowDropDown from "@material-symbols/svg-400/rounded/arrow_drop_down.svg?raw";
-import accountCircle from "@material-symbols/svg-400/rounded/account_circle.svg?raw";
-import accountCircleFill from "@material-symbols/svg-400/rounded/account_circle-fill.svg?raw";
-import check from "@material-symbols/svg-400/rounded/check.svg?raw";
-import close from "@material-symbols/svg-400/rounded/close.svg?raw";
-import computer from "@material-symbols/svg-400/rounded/computer.svg?raw";
-import contentCopy from "@material-symbols/svg-400/rounded/content_copy.svg?raw";
-import darkMode from "@material-symbols/svg-400/rounded/dark_mode.svg?raw";
-import deleteIcon from "@material-symbols/svg-400/rounded/delete.svg?raw";
-import devices from "@material-symbols/svg-400/rounded/devices.svg?raw";
-import dns from "@material-symbols/svg-400/rounded/dns.svg?raw";
-import edit from "@material-symbols/svg-400/rounded/edit.svg?raw";
-import group from "@material-symbols/svg-400/rounded/group.svg?raw";
-import groupFill from "@material-symbols/svg-400/rounded/group-fill.svg?raw";
-import history from "@material-symbols/svg-400/rounded/history.svg?raw";
-import historyFill from "@material-symbols/svg-400/rounded/history-fill.svg?raw";
-import home from "@material-symbols/svg-400/rounded/home.svg?raw";
-import homeFill from "@material-symbols/svg-400/rounded/home-fill.svg?raw";
-import info from "@material-symbols/svg-400/rounded/info.svg?raw";
-import key from "@material-symbols/svg-400/rounded/key.svg?raw";
-import lightMode from "@material-symbols/svg-400/rounded/light_mode.svg?raw";
-import link from "@material-symbols/svg-400/rounded/link.svg?raw";
-import logout from "@material-symbols/svg-400/rounded/logout.svg?raw";
-import moreVert from "@material-symbols/svg-400/rounded/more_vert.svg?raw";
-import personAdd from "@material-symbols/svg-400/rounded/person_add.svg?raw";
-import powerSettings from "@material-symbols/svg-400/rounded/power_settings_new.svg?raw";
-import refresh from "@material-symbols/svg-400/rounded/refresh.svg?raw";
-import router from "@material-symbols/svg-400/rounded/router.svg?raw";
-import share from "@material-symbols/svg-400/rounded/share.svg?raw";
-import shareFill from "@material-symbols/svg-400/rounded/share-fill.svg?raw";
-import toggleOn from "@material-symbols/svg-400/rounded/toggle_on.svg?raw";
-import translate from "@material-symbols/svg-400/rounded/translate.svg?raw";
-import warning from "@material-symbols/svg-400/rounded/warning.svg?raw";
+import activity from "lucide-static/icons/activity.svg?raw";
+import arrowLeft from "lucide-static/icons/arrow-left.svg?raw";
+import check from "lucide-static/icons/check.svg?raw";
+import chevronDown from "lucide-static/icons/chevron-down.svg?raw";
+import chevronRight from "lucide-static/icons/chevron-right.svg?raw";
+import circleUser from "lucide-static/icons/circle-user.svg?raw";
+import copy from "lucide-static/icons/copy.svg?raw";
+import ellipsis from "lucide-static/icons/ellipsis.svg?raw";
+import history from "lucide-static/icons/history.svg?raw";
+import house from "lucide-static/icons/house.svg?raw";
+import info from "lucide-static/icons/info.svg?raw";
+import keyRound from "lucide-static/icons/key-round.svg?raw";
+import languages from "lucide-static/icons/languages.svg?raw";
+import link from "lucide-static/icons/link.svg?raw";
+import logOut from "lucide-static/icons/log-out.svg?raw";
+import monitor from "lucide-static/icons/monitor.svg?raw";
+import monitorSmartphone from "lucide-static/icons/monitor-smartphone.svg?raw";
+import moon from "lucide-static/icons/moon.svg?raw";
+import pencil from "lucide-static/icons/pencil.svg?raw";
+import plus from "lucide-static/icons/plus.svg?raw";
+import power from "lucide-static/icons/power.svg?raw";
+import refreshCw from "lucide-static/icons/refresh-cw.svg?raw";
+import router from "lucide-static/icons/router.svg?raw";
+import serverCog from "lucide-static/icons/server-cog.svg?raw";
+import share2 from "lucide-static/icons/share-2.svg?raw";
+import shield from "lucide-static/icons/shield.svg?raw";
+import sun from "lucide-static/icons/sun.svg?raw";
+import sunMoon from "lucide-static/icons/sun-moon.svg?raw";
+import toggleRight from "lucide-static/icons/toggle-right.svg?raw";
+import trash2 from "lucide-static/icons/trash-2.svg?raw";
+import triangleAlert from "lucide-static/icons/triangle-alert.svg?raw";
+import userPlus from "lucide-static/icons/user-plus.svg?raw";
+import users from "lucide-static/icons/users.svg?raw";
+import x from "lucide-static/icons/x.svg?raw";
 
 export const ICONS = {
-  add,
-  admin: adminPanel,
-  "arrow-back": arrowBack,
-  "arrow-drop-down": arrowDropDown,
-  account: accountCircle,
-  "account-fill": accountCircleFill,
+  activity,
+  add: plus,
+  admin: shield,
+  "arrow-back": arrowLeft,
+  "arrow-drop-down": chevronDown,
+  "chevron-right": chevronRight,
+  account: circleUser,
   check,
-  close,
-  computer,
-  copy: contentCopy,
-  "dark-mode": darkMode,
-  delete: deleteIcon,
-  devices,
-  dns,
-  edit,
-  group,
-  "group-fill": groupFill,
+  close: x,
+  computer: monitor,
+  copy,
+  "dark-mode": moon,
+  delete: trash2,
+  devices: monitorSmartphone,
+  dns: serverCog,
+  edit: pencil,
+  group: users,
   history,
-  "history-fill": historyFill,
-  home,
-  "home-fill": homeFill,
+  home: house,
   info,
-  key,
-  "light-mode": lightMode,
+  key: keyRound,
+  "light-mode": sun,
   link,
-  logout,
-  more: moreVert,
-  "person-add": personAdd,
-  power: powerSettings,
-  refresh,
+  logout: logOut,
+  more: ellipsis,
+  "person-add": userPlus,
+  power,
+  refresh: refreshCw,
   router,
-  share,
-  "share-fill": shareFill,
-  toggle: toggleOn,
-  translate,
-  warning,
+  share: share2,
+  "system-theme": sunMoon,
+  toggle: toggleRight,
+  translate: languages,
+  warning: triangleAlert,
 } as const;
 
 export type IconName = keyof typeof ICONS;

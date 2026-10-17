@@ -14,8 +14,8 @@ export default defineConfig({
         name: "Awake",
         short_name: "Awake",
         description: "Accendi i tuoi dispositivi da ovunque",
-        theme_color: "#f8f9fb",
-        background_color: "#f8f9fb",
+        theme_color: "#efebe4",
+        background_color: "#efebe4",
         display: "standalone",
         start_url: "/",
         icons: [

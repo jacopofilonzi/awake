@@ -1,101 +1,116 @@
-/* Material 3, low-chroma "ardesia" (slate) scheme. Colors are CSS variables switched by
-   html[data-theme] and by .scheme-admin (the admin area); Tailwind maps them to semantic utilities
-   (bg-surface, text-on-surface-variant…). Never use raw colors in markup. */
+/* "Sabbia": warm, low-chroma palette on a soft gradient backdrop, translucent ("glass") panels,
+   Manrope for text and Fraunces for headings (chosen from mockups/g-soft.html, variant sabbia).
+   Colors are CSS variables switched by html[data-theme] and by .scheme-admin (the admin area, which
+   only swaps the accent to a muted slate); Tailwind maps them to semantic utilities (bg-surface,
+   text-on-surface-variant, bg-glass…). Never use raw colors in markup. The --md- prefix is historical
+   (the first theme was Material 3): the names are semantic. */
 
 @import "tailwindcss";
-@import "@fontsource-variable/roboto-flex";
+@import "@fontsource-variable/manrope";
+@import "@fontsource-variable/fraunces";
 @import "@fontsource/roboto-mono/400.css";
 
 @custom-variant dark (&:where([data-theme="dark"], [data-theme="dark"] *));
 
 :root {
-  --md-primary: #4c5f74;
+  --md-primary: #6f6450;
   --md-on-primary: #ffffff;
-  --md-primary-container: #dde3ea;
-  --md-on-primary-container: #0f1d2a;
-  --md-secondary-container: #e1e3e8;
-  --md-on-secondary-container: #191c20;
-  --md-surface: #f8f9fb;
-  --md-surface-1: #f2f3f6;
-  --md-surface-2: #eceef1;
-  --md-surface-3: #e6e8ec;
-  --md-surface-4: #e0e2e7;
-  --md-on-surface: #191c20;
-  --md-on-surface-variant: #43474e;
-  --md-muted: #5e6268;
-  --md-outline: #73777d;
-  --md-outline-variant: #c3c7cd;
-  --md-ok: #3d6b5a;
-  --md-ok-container: #d9e8e0;
-  --md-warn: #8a6a2b;
-  --md-warn-container: #f1e6cf;
-  --md-error: #a8453c;
-  --md-error-container: #f6dedb;
-  --md-inverse: #2e3135;
-  --md-on-inverse: #eff0f4;
-  --md-scrim: rgb(0 0 0 / 0.38);
+  --md-primary-container: #ebe3d4;
+  --md-on-primary-container: #3a3020;
+  --md-secondary-container: #e9e3d9;
+  --md-on-secondary-container: #2a2620;
+  --md-surface: #efebe4;
+  --md-surface-1: #f6f3ee;
+  --md-surface-2: #f3efe8;
+  --md-surface-3: #e9e3da;
+  --md-surface-4: #e0d9ce;
+  --md-on-surface: #1f1d1a;
+  --md-on-surface-variant: #4a453e;
+  --md-muted: #6f685f;
+  --md-outline: #8a8277;
+  --md-outline-variant: #d9d1c5;
+  --md-ok: #5f7a4a;
+  --md-ok-container: #e3e8d6;
+  --md-warn: #9b7a3e;
+  --md-warn-container: #f2e7d0;
+  --md-error: #a85c52;
+  --md-error-container: #f4e0dc;
+  --md-inverse: #2b2722;
+  --md-on-inverse: #f3efe8;
+  --md-scrim: rgb(31 29 26 / 0.3);
+  /* glass panels and the light of a device that is on */
+  --md-glass: rgb(255 255 255 / 0.62);
+  --md-glass-strong: rgb(255 255 255 / 0.85);
+  --md-glass-line: rgb(255 255 255 / 0.8);
+  --md-glow: #b8a588;
+  --md-shadow: 0 1px 2px rgb(31 29 26 / 0.04), 0 8px 24px -8px rgb(31 29 26 / 0.14);
+  --md-backdrop:
+    radial-gradient(60rem 40rem at 5% -10%, #e9dcc6 0, transparent 60%),
+    radial-gradient(50rem 40rem at 100% 10%, #e2e4d6 0, transparent 55%),
+    radial-gradient(40rem 30rem at 60% 110%, #ead8cf 0, transparent 60%), #efebe4;
   color-scheme: light;
 }
 
 [data-theme="dark"] {
-  --md-primary: #b4c8df;
-  --md-on-primary: #1d3246;
-  --md-primary-container: #344558;
-  --md-on-primary-container: #d2e4fb;
-  --md-secondary-container: #43474e;
-  --md-on-secondary-container: #dfe2e9;
-  --md-surface: #111316;
-  --md-surface-1: #191b1e;
-  --md-surface-2: #1d2023;
-  --md-surface-3: #272a2e;
-  --md-surface-4: #323539;
-  --md-on-surface: #e2e2e6;
-  --md-on-surface-variant: #c3c7cd;
-  --md-muted: #a8abb1;
-  --md-outline: #8d9197;
-  --md-outline-variant: #43474e;
-  --md-ok: #9fcdb8;
-  --md-ok-container: #24382f;
-  --md-warn: #dcc28e;
-  --md-warn-container: #3b3222;
-  --md-error: #f2b8b0;
-  --md-error-container: #4a2622;
-  --md-inverse: #e2e2e6;
-  --md-on-inverse: #2e3135;
+  --md-primary: #cdbb98;
+  --md-on-primary: #2a2216;
+  --md-primary-container: #362e22;
+  --md-on-primary-container: #eadcc2;
+  --md-secondary-container: #2c2721;
+  --md-on-secondary-container: #e8e0d4;
+  --md-surface: #12100d;
+  --md-surface-1: #1a1714;
+  --md-surface-2: #1f1b17;
+  --md-surface-3: #29241f;
+  --md-surface-4: #332d27;
+  --md-on-surface: #ece6dc;
+  --md-on-surface-variant: #c9c0b3;
+  --md-muted: #9a9083;
+  --md-outline: #857b6f;
+  --md-outline-variant: #3a332c;
+  --md-ok: #b2c08e;
+  --md-ok-container: #2c3222;
+  --md-warn: #d4b479;
+  --md-warn-container: #3a3020;
+  --md-error: #dc9b91;
+  --md-error-container: #43261f;
+  --md-inverse: #ece6dc;
+  --md-on-inverse: #2b2722;
+  --md-scrim: rgb(0 0 0 / 0.5);
+  --md-glass: rgb(255 255 255 / 0.04);
+  --md-glass-strong: rgb(255 255 255 / 0.08);
+  --md-glass-line: rgb(255 255 255 / 0.08);
+  --md-glow: #b59c70;
+  --md-shadow: 0 1px 2px rgb(0 0 0 / 0.4), 0 12px 32px -12px rgb(0 0 0 / 0.6);
+  --md-backdrop:
+    radial-gradient(60rem 40rem at 0 -10%, #2a2318 0, transparent 60%),
+    radial-gradient(50rem 40rem at 100% 0, #20221a 0, transparent 55%), #12100d;
   color-scheme: dark;
 }
 
-/* Admin area: same structure, only a muted warm accent (surfaces stay neutral in dark mode). */
+/* Admin area: same surfaces, only a muted slate accent. */
 .scheme-admin {
-  --md-primary: #7a5c3a;
-  --md-primary-container: #f0e3d4;
-  --md-on-primary-container: #2a1a08;
-  --md-secondary-container: #efe4da;
-  --md-on-secondary-container: #251a10;
-  --md-surface: #fbf8f5;
-  --md-surface-1: #f6f1ec;
-  --md-surface-2: #f1ebe5;
-  --md-surface-3: #ebe5de;
-  --md-surface-4: #e5dfd8;
-  --md-outline-variant: #d3c7bb;
+  --md-primary: #4c5f74;
+  --md-on-primary: #ffffff;
+  --md-primary-container: #dde3ea;
+  --md-on-primary-container: #0f1d2a;
+  --md-secondary-container: #e1e5ea;
+  --md-on-secondary-container: #191c20;
+  --md-glow: #8aa0b8;
 }
 [data-theme="dark"] .scheme-admin {
-  --md-primary: #cdbba5;
-  --md-on-primary: #2f271d;
-  --md-primary-container: #36322e;
-  --md-on-primary-container: #e6dccf;
-  --md-secondary-container: #383532;
-  --md-on-secondary-container: #e4ded7;
-  --md-surface: #121316;
-  --md-surface-1: #1a1b1e;
-  --md-surface-2: #1e1f22;
-  --md-surface-3: #28292c;
-  --md-surface-4: #333437;
-  --md-outline-variant: #45464a;
+  --md-primary: #b4c8df;
+  --md-on-primary: #1d3246;
+  --md-primary-container: #2c3846;
+  --md-on-primary-container: #d2e4fb;
+  --md-secondary-container: #2a3038;
+  --md-on-secondary-container: #dfe2e9;
+  --md-glow: #7d93ab;
 }
 
 @theme inline {
-  --font-sans: "Roboto Flex Variable", Roboto, system-ui, sans-serif;
+  --font-sans: "Manrope Variable", system-ui, sans-serif;
+  --font-display: "Fraunces Variable", Georgia, serif;
   --font-mono: "Roboto Mono", ui-monospace, monospace;
   --color-primary: var(--md-primary);
   --color-on-primary: var(--md-on-primary);
@@ -122,6 +137,11 @@
   --color-inverse: var(--md-inverse);
   --color-on-inverse: var(--md-on-inverse);
   --color-scrim: var(--md-scrim);
+  --color-glass: var(--md-glass);
+  --color-glass-strong: var(--md-glass-strong);
+  --color-glass-line: var(--md-glass-line);
+  --color-glow: var(--md-glow);
+  --shadow-soft: var(--md-shadow);
 }
 
 @layer base {
@@ -129,8 +149,14 @@
     -webkit-tap-highlight-color: transparent;
   }
   body {
-    @apply bg-surface text-on-surface font-sans antialiased;
+    @apply text-on-surface font-sans antialiased;
     min-height: 100dvh;
+    background: var(--md-backdrop);
+    background-attachment: fixed;
+  }
+  h1,
+  h2 {
+    @apply font-display font-medium tracking-[-0.01em];
   }
   /* The native option list ignores the select's transparent background (white popup on Windows
      Chrome) but inherits its text color: give options the theme's colors explicitly. */
@@ -144,56 +170,69 @@
     cursor: pointer;
   }
   .icon svg {
-    fill: currentColor;
     width: 100%;
     height: 100%;
   }
 }
 
-/* ---------- buttons (M3: filled, tonal, outlined, text, icon) ---------- */
-
-@utility btn {
-  @apply inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full px-5 text-sm font-medium whitespace-nowrap transition-[background-color,box-shadow,opacity] select-none disabled:pointer-events-none disabled:opacity-40;
-}
-@utility btn-filled {
-  @apply btn bg-primary text-on-primary hover:shadow-md;
-}
-@utility btn-tonal {
-  @apply btn bg-secondary-container text-on-secondary-container hover:shadow-sm;
-}
-@utility btn-outlined {
-  @apply btn border border-outline text-primary hover:bg-primary/8;
-}
-@utility btn-text {
-  @apply btn px-3 text-primary hover:bg-primary/8;
-}
-@utility btn-danger {
-  @apply btn bg-error text-surface hover:shadow-md;
-}
-@utility icon-btn {
-  @apply inline-grid size-10 shrink-0 place-items-center rounded-full text-on-surface-variant transition-colors hover:bg-on-surface/8 disabled:opacity-40;
-}
-
 /* ---------- surfaces ---------- */
 
+/* Translucent panel over the backdrop. */
+@utility glass {
+  @apply border border-glass-line bg-glass shadow-soft backdrop-blur-xl backdrop-saturate-[1.2];
+}
 @utility card {
-  @apply rounded-xl bg-surface-1 shadow-[0_1px_2px_rgb(0_0_0/0.15),0_1px_3px_1px_rgb(0_0_0/0.06)];
+  @apply glass rounded-[22px];
 }
 @utility card-outlined {
-  @apply rounded-xl border border-outline-variant bg-surface;
+  @apply glass rounded-[22px] shadow-none;
 }
 @utility chip {
-  @apply inline-flex h-7 items-center gap-1 rounded-lg border border-outline-variant px-2.5 text-[0.8125rem] text-on-surface-variant;
+  @apply inline-flex h-7 items-center gap-1 rounded-full bg-glass-strong px-2.5 text-[0.8125rem] font-medium text-on-surface-variant;
+}
+
+/* ---------- buttons ---------- */
+
+@utility btn {
+  @apply inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-xl px-4 text-sm font-semibold whitespace-nowrap transition-[background-color,box-shadow,opacity,color] select-none disabled:pointer-events-none disabled:opacity-40;
+}
+@utility btn-filled {
+  @apply btn bg-primary text-on-primary hover:brightness-105;
+}
+@utility btn-tonal {
+  @apply btn border border-glass-line bg-glass-strong text-on-surface shadow-soft hover:bg-surface-1;
+}
+@utility btn-outlined {
+  @apply btn border border-outline-variant text-on-surface hover:bg-glass-strong;
+}
+@utility btn-text {
+  @apply btn px-3 text-on-surface-variant hover:bg-glass-strong hover:text-on-surface;
+}
+@utility btn-danger {
+  @apply btn bg-error text-surface hover:brightness-105;
+}
+@utility icon-btn {
+  @apply inline-grid size-10 shrink-0 place-items-center rounded-xl text-on-surface-variant transition-colors hover:bg-glass-strong hover:text-on-surface disabled:opacity-40;
 }
 
 /* ---------- forms ---------- */
 
 @utility field-label {
-  @apply mb-1.5 block text-[0.8125rem] font-medium text-on-surface-variant;
+  @apply mb-1.5 block text-[0.8125rem] font-semibold text-on-surface-variant;
 }
 @utility input {
-  @apply h-12 w-full rounded-sm border border-outline bg-transparent px-4 text-base text-on-surface outline-none placeholder:text-muted focus:border-primary focus:ring-1 focus:ring-primary;
+  @apply h-11 w-full rounded-xl border border-glass-line bg-glass-strong px-3.5 text-base text-on-surface outline-none placeholder:text-muted focus:border-primary focus:ring-4 focus:ring-primary/15;
 }
 @utility hint {
   @apply mt-1 text-xs text-muted;
+}
+
+/* ---------- navigation ---------- */
+
+/* Pill tabs on a glass track (house sections, admin sections on phones). */
+@utility tabs {
+  @apply glass flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1 [scrollbar-width:none];
+}
+@utility tab {
+  @apply flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap text-muted transition-colors hover:text-on-surface aria-[current=page]:bg-surface-1 aria-[current=page]:text-on-surface aria-[current=page]:shadow-soft dark:aria-[current=page]:bg-glass-strong;
 }

@@ -29,6 +29,9 @@ export const it: Messages = {
     admin: "Amministrazione",
     users: "Utenti",
     server: "Server",
+    houses: "Case",
+    you: "Tu",
+    devicesOn: "{on} accesi su {n}",
   },
   theme: { toggle: "Cambia tema", system: "Sistema", light: "Chiaro", dark: "Scuro" },
   auth: {

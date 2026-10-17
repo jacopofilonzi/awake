@@ -79,6 +79,9 @@ export const en = {
     admin: "Administration",
     users: "Users",
     server: "Server",
+    houses: "Houses",
+    you: "You",
+    devicesOn: "{on} of {n} on",
   },
   theme: { toggle: "Change theme", system: "System", light: "Light", dark: "Dark" },
   auth: {

@@ -11,11 +11,12 @@
     "@awake/shared": "*"
   },
   "devDependencies": {
-    "@fontsource-variable/roboto-flex": "^5.3.0",
+    "@fontsource-variable/fraunces": "^5.3.0",
+    "@fontsource-variable/manrope": "^5.3.0",
     "@fontsource/roboto-mono": "^5.3.0",
-    "@material-symbols/svg-400": "^0.48.0",
     "@sveltejs/vite-plugin-svelte": "^7.3.1",
     "@tailwindcss/vite": "^4.3.3",
+    "lucide-static": "^1.59.0",
     "svelte": "^5.57.2",
     "svelte-check": "^4.7.7",
     "tailwindcss": "^4.3.3",
