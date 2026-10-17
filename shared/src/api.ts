@@ -8,8 +8,9 @@ export type Millis = number;
 export interface PublicConfig {
   version: string;
   protocolVersion: number;
+  /** `enabled`: sign-up with username and password. `autoApprove`: new accounts are active right away. */
   registration: { enabled: boolean; autoApprove: boolean };
-  /** External login providers (Google, GitHub, any OIDC…) enabled on this server. */
+  /** External login providers enabled on this server (configured by admins). */
   providers: { id: string; label: string }[];
 }
 
@@ -61,6 +62,11 @@ export interface AdminUser {
   hasPassword: boolean;
   /** Ids of the linked external providers. */
   providers: string[];
+  /**
+   * False when the account has no password and no linked provider that is still enabled (e.g. its
+   * provider was deleted): an admin has to send a set-password link.
+   */
+  canLogIn: boolean;
   createdAt: Millis;
   lastLoginAt: Millis | null;
 }
@@ -74,6 +80,58 @@ export interface PasswordLink {
 export interface AdminUserCreated {
   user: AdminUser;
   link?: PasswordLink;
+}
+
+/** Server-wide settings editable by admins. */
+export interface ServerSettings {
+  /** Anyone can sign up with username and password. */
+  registrationEnabled: boolean;
+  /** New accounts (password sign-up or a provider allowing new accounts) are active without approval. */
+  autoApprove: boolean;
+  /** SECRET_KEY is set: login providers can be saved (their client secrets are encrypted with it). */
+  secretKeyConfigured: boolean;
+}
+
+/** `oidc`: any OpenID Connect provider (Google, Microsoft, Authentik, Keycloak…). `github`: GitHub (OAuth 2). */
+export type ProviderType = "oidc" | "github";
+
+/** A login provider as admins see it. The client secret is never returned. */
+export interface AdminProvider {
+  /** Stable id used in the redirect URI and in linked identities; cannot change. */
+  id: string;
+  label: string;
+  type: ProviderType;
+  /** OIDC: the issuer URL. GitHub: the base URL of GitHub Enterprise, null for github.com. */
+  issuer: string | null;
+  clientId: string;
+  scopes: string;
+  enabled: boolean;
+  /** Someone logging in with an identity not linked to any account gets a new account. */
+  allowSignup: boolean;
+  /** Register this at the provider. */
+  redirectUri: string;
+  /** Accounts linked to this provider. */
+  linkedUsers: number;
+  createdAt: Millis;
+}
+
+export interface ProviderInput {
+  /** Only on creation. */
+  id?: string;
+  label: string;
+  type: ProviderType;
+  issuer: string | null;
+  clientId: string;
+  /** Required on creation; on update an empty value keeps the current secret. */
+  clientSecret: string;
+  scopes: string;
+  enabled: boolean;
+  allowSignup: boolean;
+}
+
+export interface ProviderDeleted {
+  /** Users left without any way to log in (no password, no other provider): they need a password link. */
+  withoutLogin: string[];
 }
 
 // ---------- houses ----------

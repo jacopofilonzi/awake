@@ -16,26 +16,17 @@ export interface Config {
   publicUrl: string;
   dataDir: string;
   trustProxy: boolean;
-  registration: { enabled: boolean; autoApprove: boolean };
-  providers: ProviderConfig[];
+  /**
+   * Encrypts the client secrets of login providers stored in the database. Null: providers cannot be
+   * saved (the rest of the server works). Login providers and registration are configured by admins
+   * in the UI, not here.
+   */
+  secretKey: string | null;
   /** Idle lifetime of a session; every use extends it. */
   sessionTtlMs: number;
   /** Lifetime of a set-password link. */
   passwordLinkTtlMs: number;
   timing: Timing;
-}
-
-export type ProviderType = "oidc" | "github";
-
-export interface ProviderConfig {
-  id: string;
-  label: string;
-  type: ProviderType;
-  /** OIDC issuer (discovery at <issuer>/.well-known/openid-configuration). Unused for GitHub. */
-  issuer: string | null;
-  clientId: string;
-  clientSecret: string;
-  scopes: string;
 }
 
 export interface Timing {
@@ -70,12 +61,6 @@ export const defaultTiming: Timing = {
   wakeWindowMs: 5 * 60_000,
 };
 
-/** Defaults for well-known providers: only the client id and secret are needed for these. */
-const PRESETS: Record<string, Partial<ProviderConfig>> = {
-  google: { label: "Google", type: "oidc", issuer: "https://accounts.google.com", scopes: "openid email profile" },
-  github: { label: "GitHub", type: "github", scopes: "read:user user:email" },
-};
-
 export class ConfigError extends Error {}
 
 const here = path.dirname(fileURLToPath(import.meta.url));
@@ -102,48 +87,21 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     publicUrl: parsed.origin,
     dataDir: path.resolve(env.DATA_DIR?.trim() || "./data"),
     trustProxy: bool(env.TRUST_PROXY, false),
-    registration: {
-      enabled: bool(env.REGISTRATION_ENABLED, false),
-      autoApprove: bool(env.REGISTRATION_AUTO_APPROVE, false),
-    },
-    providers: loadProviders(env),
+    secretKey: loadSecretKey(env),
     sessionTtlMs: int(env.SESSION_TTL_DAYS, 30, "SESSION_TTL_DAYS") * 86_400_000,
     passwordLinkTtlMs: int(env.PASSWORD_LINK_TTL_HOURS, 72, "PASSWORD_LINK_TTL_HOURS") * 3_600_000,
     timing: defaultTiming,
   };
 }
 
-/** OAUTH_PROVIDERS=google,github,authentik then OAUTH_<ID>_* for each (see .env.example). */
-function loadProviders(env: NodeJS.ProcessEnv): ProviderConfig[] {
-  const ids = (env.OAUTH_PROVIDERS ?? "")
-    .split(",")
-    .map((s) => s.trim().toLowerCase())
-    .filter(Boolean);
-  const out: ProviderConfig[] = [];
-  for (const id of new Set(ids)) {
-    if (!/^[a-z0-9-]{1,32}$/.test(id)) throw new ConfigError(`OAUTH_PROVIDERS: invalid provider id "${id}"`);
-    const key = (name: string) => env[`OAUTH_${id.toUpperCase().replace(/-/g, "_")}_${name}`]?.trim() || undefined;
-    const preset = PRESETS[id] ?? {};
-    const type = (key("TYPE") ?? preset.type ?? "oidc") as ProviderType;
-    if (type !== "oidc" && type !== "github") throw new ConfigError(`OAUTH_${id.toUpperCase()}_TYPE must be oidc or github`);
-    const issuer = key("ISSUER") ?? preset.issuer ?? null;
-    if (type === "oidc" && !issuer) throw new ConfigError(`OAUTH_${id.toUpperCase()}_ISSUER is required for an OIDC provider`);
-    const clientId = key("CLIENT_ID");
-    const clientSecret = key("CLIENT_SECRET");
-    if (!clientId || !clientSecret) {
-      throw new ConfigError(`OAUTH_${id.toUpperCase()}_CLIENT_ID and OAUTH_${id.toUpperCase()}_CLIENT_SECRET are required`);
-    }
-    out.push({
-      id,
-      label: key("LABEL") ?? preset.label ?? id,
-      type,
-      issuer,
-      clientId,
-      clientSecret,
-      scopes: key("SCOPES") ?? preset.scopes ?? "openid email profile",
-    });
+function loadSecretKey(env: NodeJS.ProcessEnv): string | null {
+  const key = env.SECRET_KEY?.trim();
+  if (!key) {
+    log.warn("config", "SECRET_KEY is not set: login providers cannot be configured (see .env.example)");
+    return null;
   }
-  return out;
+  if (key.length < 32) throw new ConfigError("SECRET_KEY must be at least 32 characters (e.g. openssl rand -base64 32)");
+  return key;
 }
 
 function bool(value: string | undefined, fallback: boolean): boolean {

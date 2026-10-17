@@ -3,6 +3,7 @@ import { bodyLimit } from "hono/body-limit";
 import { PROTOCOL_VERSION, type PublicConfig } from "@awake/shared";
 import { ApiError } from "../errors.ts";
 import { log } from "../log.ts";
+import { getSettings } from "../settings.ts";
 import { VERSION } from "../version.ts";
 import { activityRoutes } from "./activity.ts";
 import { adminRoutes } from "./admin.ts";
@@ -22,8 +23,8 @@ export function createApi(s: Services) {
     c.json({
       version: VERSION,
       protocolVersion: PROTOCOL_VERSION,
-      registration: s.config.registration,
-      providers: s.oauth.list(),
+      registration: (({ registrationEnabled, autoApprove }) => ({ enabled: registrationEnabled, autoApprove }))(getSettings(s.db)),
+      providers: s.oauth.listEnabled(),
     } satisfies PublicConfig),
   );
 

@@ -143,8 +143,9 @@ describe("registration", () => {
   });
 
   test("with approval: pending until an admin approves", async () => {
-    const s = await startTestServer({ registration: { enabled: true, autoApprove: false } });
+    const s = await startTestServer();
     try {
+      await s.admin.req("PUT", "/admin/settings", { registrationEnabled: true, autoApprove: false });
       const c = new Client(s);
       const res = await c.req("POST", "/auth/register", { username: "newbie", password: NEW_PASSWORD });
       assert.equal(res.status, 202);
@@ -162,8 +163,10 @@ describe("registration", () => {
   });
 
   test("with auto-approval: logged in right away", async () => {
-    const s = await startTestServer({ registration: { enabled: true, autoApprove: true } });
+    const s = await startTestServer();
     try {
+      await s.admin.req("PUT", "/admin/settings", { registrationEnabled: true, autoApprove: true });
+      assert.deepEqual((await new Client(s).req("GET", "/config")).body.registration, { enabled: true, autoApprove: true });
       const c = new Client(s);
       const res = await c.req("POST", "/auth/register", { username: "quick", password: NEW_PASSWORD });
       assert.equal(res.status, 201);

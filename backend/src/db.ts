@@ -160,6 +160,29 @@ const migrations = [
   CREATE INDEX action_log_house ON action_log(house_id, created_at DESC);
   CREATE INDEX action_log_actor ON action_log(actor_user_id, created_at DESC);
   `,
+  // 2: login providers and server settings move from .env to the database (edited by admins).
+  `
+  CREATE TABLE settings (
+    key   TEXT PRIMARY KEY,
+    value TEXT NOT NULL
+  );
+
+  CREATE TABLE oauth_providers (
+    id                TEXT PRIMARY KEY,
+    label             TEXT NOT NULL,
+    type              TEXT NOT NULL CHECK (type IN ('oidc', 'github')),
+    -- oidc: issuer URL; github: GitHub Enterprise base URL, NULL for github.com
+    issuer            TEXT,
+    client_id         TEXT NOT NULL,
+    -- encrypted with SECRET_KEY (secrets.ts: seal/open)
+    client_secret_enc TEXT NOT NULL,
+    scopes            TEXT NOT NULL,
+    enabled           INTEGER NOT NULL DEFAULT 1,
+    allow_signup      INTEGER NOT NULL DEFAULT 0,
+    created_at        INTEGER NOT NULL,
+    updated_at        INTEGER NOT NULL
+  );
+  `,
 ];
 
 export type Db = DatabaseSync;

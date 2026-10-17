@@ -27,6 +27,9 @@ export const ERROR_CODES = [
   "OAUTH_NOT_LINKED",
   "IDENTITY_IN_USE",
   "LAST_LOGIN_METHOD",
+  "SECRET_KEY_MISSING",
+  "PROVIDER_ID_TAKEN",
+  "PROVIDER_UNREACHABLE",
   // users, houses, sharing
   "LAST_ADMIN",
   "LAST_OWNER",

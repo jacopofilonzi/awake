@@ -1,5 +1,5 @@
-// /api/admin: user management, admins only. Admins manage accounts, not data: they do not see other
-// users' houses or devices.
+// /api/admin: user management (here), server settings and login providers (server.ts); admins only.
+// Admins manage accounts, not data: they do not see other users' houses or devices.
 
 import { Hono } from "hono";
 import { z } from "zod";
@@ -11,6 +11,7 @@ import { ApiError } from "../errors.ts";
 import { log } from "../log.ts";
 import { hashPassword } from "../secrets.ts";
 import { readBody, requireAdmin, requireUser, type Env, type Services } from "./common.ts";
+import { serverRoutes } from "./server.ts";
 
 export function adminRoutes(s: Services) {
   const { db, config, hub, bus } = s;
@@ -132,6 +133,9 @@ export function adminRoutes(s: Services) {
     log.info("admin", "user deleted", { by: c.var.auth.user.username, user: user.username, housesDeleted: owned.length });
     return c.body(null, 204);
   });
+
+  // Settings and login providers (same admin-only middleware).
+  app.route("/", serverRoutes(s));
 
   return app;
 }

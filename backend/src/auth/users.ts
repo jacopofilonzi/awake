@@ -51,7 +51,12 @@ export function toMe(db: Db, row: UserRow, providerLabel: (id: string) => string
 }
 
 export function toAdminUser(db: Db, row: UserRow): AdminUser {
-  const providers = db.prepare("SELECT provider FROM identities WHERE user_id = ? ORDER BY provider").all(row.id) as { provider: string }[];
+  const providers = db
+    .prepare(
+      `SELECT i.provider, COALESCE(p.enabled, 0) AS enabled FROM identities i
+       LEFT JOIN oauth_providers p ON p.id = i.provider WHERE i.user_id = ? ORDER BY i.provider`,
+    )
+    .all(row.id) as { provider: string; enabled: number }[];
   return {
     id: row.id,
     username: row.username,
@@ -61,6 +66,7 @@ export function toAdminUser(db: Db, row: UserRow): AdminUser {
     mustChangePassword: !!row.must_change_password,
     hasPassword: !!row.password_hash,
     providers: providers.map((p) => p.provider),
+    canLogIn: !!row.password_hash || providers.some((p) => p.enabled),
     createdAt: row.created_at,
     lastLoginAt: row.last_login_at,
   };

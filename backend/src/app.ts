@@ -41,7 +41,7 @@ export async function startServer(config: Config): Promise<RunningServer> {
   const bus = new EventBus(db);
   const hub = new AgentHub(db, config.timing, limiters.agent);
   const devices = new DeviceService(db, hub, bus, config.timing);
-  const oauth = new OAuthProviders(config);
+  const oauth = new OAuthProviders(db, config);
 
   const app = new Hono<Env>();
   app.use(secureHeaders());

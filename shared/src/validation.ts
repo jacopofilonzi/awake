@@ -55,3 +55,29 @@ export const deviceInputSchema = z.object({
 });
 
 export const deviceActionSchema = z.enum(["wake", "press", "long_press", "on", "off"]);
+
+/** Provider ids appear in URLs and in linked identities: lowercase letters, digits and `-`. */
+export const PROVIDER_ID_RE = /^[a-z0-9][a-z0-9-]{0,31}$/;
+
+const httpsUrl = z
+  .string()
+  .trim()
+  .url()
+  .refine((u) => /^https?:\/\//.test(u));
+
+export const providerInputSchema = z.object({
+  id: z.string().trim().toLowerCase().regex(PROVIDER_ID_RE).optional(),
+  label: nameSchema,
+  type: z.enum(["oidc", "github"]),
+  issuer: httpsUrl.nullable().default(null),
+  clientId: z.string().trim().min(1).max(512),
+  clientSecret: z.string().trim().max(1024).default(""),
+  scopes: z.string().trim().min(1).max(256),
+  enabled: z.boolean().default(true),
+  allowSignup: z.boolean().default(false),
+});
+
+export const serverSettingsSchema = z.object({
+  registrationEnabled: z.boolean(),
+  autoApprove: z.boolean(),
+});

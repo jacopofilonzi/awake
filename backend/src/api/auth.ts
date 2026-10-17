@@ -5,11 +5,13 @@ import { Hono } from "hono";
 import { deleteCookie, getCookie, setCookie } from "hono/cookie";
 import { z } from "zod";
 import { passwordSchema, usernameSchema, type ErrorCode, type PasswordTokenInfo, type RegisterResponse } from "@awake/shared";
+import type { Provider } from "../auth/oauth.ts";
 import { createSession, endSession, isSecure, readSession, revokeSessions } from "../auth/sessions.ts";
 import { availableUsername, createUser, loadUser, loadUserByName, toMe, type UserRow } from "../auth/users.ts";
 import { isUniqueViolation } from "../db.ts";
 import { ApiError } from "../errors.ts";
 import { log } from "../log.ts";
+import { getSettings } from "../settings.ts";
 import { dummyPasswordHash, hashPassword, hashToken, verifyPassword } from "../secrets.ts";
 import { clientIp, readBody, requireUser, type Ctx, type Env, type Services } from "./common.ts";
 
@@ -50,13 +52,14 @@ export function authRoutes(s: Services) {
   });
 
   app.post("/register", async (c) => {
-    if (!config.registration.enabled) throw new ApiError(403, "REGISTRATION_DISABLED");
+    const settings = getSettings(db);
+    if (!settings.registrationEnabled) throw new ApiError(403, "REGISTRATION_DISABLED");
     const ip = guard(c);
     const body = await readBody(c, z.object({ username: usernameSchema, password: passwordSchema }));
     // Every attempt counts, successful or not: registration must not be scriptable at volume.
     limiters.ip.recordFailure(ip);
 
-    const status = config.registration.autoApprove ? "active" : "pending";
+    const status = settings.autoApprove ? "active" : "pending";
     const user = createUser(db, {
       username: body.username,
       passwordHash: await hashPassword(body.password),
@@ -145,9 +148,10 @@ export function authRoutes(s: Services) {
 
   /** Starts a login (`mode=login`) or links the provider to the logged-in account (`mode=link`). */
   app.get("/oauth/:provider/start", async (c) => {
-    const provider = oauth.get(c.req.param("provider"));
     const mode = c.req.query("mode") === "link" ? "link" : "login";
     const next = safeNext(c.req.query("next"));
+    const provider = providerOrError(c.req.param("provider"));
+    if ("error" in provider) return redirectError(c, next, provider.error);
     let userId: string | null = null;
     if (mode === "link") {
       const session = readSession(db, config, c);
@@ -178,7 +182,8 @@ export function authRoutes(s: Services) {
   });
 
   app.get("/oauth/:provider/callback", async (c) => {
-    const provider = oauth.get(c.req.param("provider"));
+    const provider = providerOrError(c.req.param("provider"));
+    if ("error" in provider) return redirectError(c, "/", provider.error);
     const state = c.req.query("state") ?? "";
     const cookieState = getCookie(c, OAUTH_COOKIE);
     deleteCookie(c, OAUTH_COOKIE, { path: "/api/auth/oauth", secure: isSecure(config) });
@@ -234,9 +239,10 @@ export function authRoutes(s: Services) {
     const ip = clientIp(c, config.trustProxy);
     let user = linkedUserId ? loadUser(db, linkedUserId) : undefined;
     if (!user) {
-      // Accounts are never matched by email: an unknown identity is a new account, if allowed.
-      if (!config.registration.enabled) return redirectError(c, flow.next, "OAUTH_NOT_LINKED");
-      const status = config.registration.autoApprove ? "active" : "pending";
+      // Accounts are never matched by email: an unknown identity is linked from an existing account
+      // (Account → linked logins), or becomes a new account only when this provider allows it.
+      if (!provider.allowSignup) return redirectError(c, flow.next, "OAUTH_NOT_LINKED");
+      const status = getSettings(db).autoApprove ? "active" : "pending";
       user = createUser(db, {
         username: availableUsername(db, identity.usernameHint),
         email: identity.email,
@@ -261,6 +267,16 @@ export function authRoutes(s: Services) {
     log.info("auth", "login", { user: user.username, provider: provider.id, ip });
     return c.redirect(`${config.publicUrl}${flow.next}`, 302);
   });
+
+  /** OAuth routes are browser navigations: errors become a redirect with `?error=`, not JSON. */
+  function providerOrError(id: string): Provider | { error: ErrorCode } {
+    try {
+      return oauth.get(id);
+    } catch (err) {
+      if (err instanceof ApiError) return { error: err.code };
+      throw err;
+    }
+  }
 
   function redirectError(c: Ctx, next: string, code: ErrorCode) {
     return c.redirect(withParam(next, "error", code), 302);
