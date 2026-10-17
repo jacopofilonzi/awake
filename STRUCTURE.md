@@ -100,7 +100,7 @@ runs on :5173, listening on the LAN (`host: true`: board agents and phones conne
 | Path | Responsibility |
 | --- | --- |
 | `main.ts`, `App.svelte` | mount; route guards (anonymous → /login, forced password change, admin only) |
-| `app.css` | Tailwind 4: color tokens as CSS variables (light, dark, admin; glass, glow, backdrop) mapped by `@theme inline`; fonts; `@utility` components (glass, card, btn-filled/tonal/outlined/text, input, tabs/tab…) |
+| `app.css` | Tailwind 4: color tokens as CSS variables (light, dark, admin; glass, glow, backdrop) mapped by `@theme inline`; fonts; `@utility` components (glass, card, btn-filled/tonal/outlined/text, input…) |
 | `lib/api.ts` | the only fetch layer, typed on `@awake/shared`; `ApiFailure` carries the error code |
 | `lib/router.svelte.ts` | history router (path patterns → route names), `link` action |
 | `lib/session.svelte.ts` | public config + current user, boot, logout |

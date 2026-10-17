@@ -226,13 +226,3 @@
 @utility hint {
   @apply mt-1 text-xs text-muted;
 }
-
-/* ---------- navigation ---------- */
-
-/* Pill tabs on a glass track (house sections, admin sections on phones). */
-@utility tabs {
-  @apply glass flex max-w-full gap-1 overflow-x-auto rounded-2xl p-1 [scrollbar-width:none];
-}
-@utility tab {
-  @apply flex shrink-0 items-center gap-2 rounded-xl px-3.5 py-2 text-sm font-semibold whitespace-nowrap text-muted transition-colors hover:text-on-surface aria-[current=page]:bg-surface-1 aria-[current=page]:text-on-surface aria-[current=page]:shadow-soft dark:aria-[current=page]:bg-glass-strong;
-}

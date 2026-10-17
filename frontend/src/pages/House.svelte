@@ -1,6 +1,7 @@
 <script lang="ts">
   import { untrack } from "svelte";
-  // A house: top bar with the house switcher, tabs (devices, agents, members, log).
+  // A house: header with the house switcher; one of its sections (devices, agents, members, log),
+  // chosen from the navigation (sidebar on wide screens, dock on phones).
   import AppShell from "../components/AppShell.svelte";
   import DeviceCard from "../components/DeviceCard.svelte";
   import Icon from "../components/Icon.svelte";
@@ -78,12 +79,9 @@
     }
   }
 
-  const tabs = $derived([
-    { name: "house", href: `/houses/${id}`, label: t("house.tabs.devices"), icon: "devices" as const },
-    { name: "house-agents", href: `/houses/${id}/agents`, label: t("house.tabs.agents"), icon: "router" as const },
-    { name: "house-members", href: `/houses/${id}/members`, label: t("house.tabs.members"), icon: "group" as const },
-    { name: "house-log", href: `/houses/${id}/log`, label: t("house.tabs.log"), icon: "history" as const },
-  ]);
+  const sectionLabel = $derived(
+    tab === "house-agents" ? t("house.tabs.agents") : tab === "house-members" ? t("house.tabs.members") : tab === "house-log" ? t("house.tabs.log") : "",
+  );
 </script>
 
 <AppShell area="app">
@@ -111,7 +109,7 @@
             <div class="mx-2 my-1.5 border-t border-on-surface/8"></div>
             <MenuItem label={t("house.newTitle")} icon="add" onclick={() => (houseDialog = "new")} />
           </Menu>
-          <p class="mt-1 text-sm text-muted">{t(`roles.youAre.${house.role}`)}</p>
+          <p class="mt-1 text-sm text-muted">{#if sectionLabel}<b class="font-semibold text-on-surface-variant">{sectionLabel}</b>{" · "}{/if}{t(`roles.youAre.${house.role}`)}</p>
         </div>
         <div class="flex items-center gap-2">
           {#if tab === "house"}
@@ -130,11 +128,6 @@
           </Menu>
         </div>
       </div>
-      <nav class="tabs mt-4 w-fit" aria-label={house.name}>
-        {#each tabs as tb (tb.name)}
-          <a href={tb.href} use:link class="tab" aria-current={tab === tb.name ? "page" : undefined}><Icon name={tb.icon} size={17} />{tb.label}</a>
-        {/each}
-      </nav>
     </header>
 
     <div class="px-4 pt-4 md:px-3">

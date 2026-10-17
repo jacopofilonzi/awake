@@ -1,7 +1,8 @@
 <script lang="ts">
   // Navigation. Wide screens: a floating glass sidebar with the houses (devices on / total), your
-  // pages, administration and the account. Phones: a slim header (logo, theme, account menu) and a
-  // floating dock at the bottom (navigation only: page actions float above it, bottom right).
+  // pages, administration and the account; the current house shows its sections under it. Phones: a
+  // slim header (logo, theme, account menu) and a floating dock at the bottom with the sections of the
+  // current (or last) house, then shared and activity (navigation only: page actions float above it).
   // The admin area uses the same shell with its own destinations and the slate accent.
   import type { Snippet } from "svelte";
   import HouseDialog from "../dialogs/HouseDialog.svelte";
@@ -25,16 +26,24 @@
     routes: RouteName[];
   }
 
-  const HOUSE_ROUTES: RouteName[] = ["home", "house", "house-agents", "house-members", "house-log", "device"];
   const route = $derived(router.route.name);
   // The house being shown: from the URL, or the device's house on a device page.
   const currentHouse = $derived(
     route === "device" ? data.devices.find((d) => d.id === router.route.params.id)?.houseId : router.route.params.id,
   );
-  const homeHref = $derived(lastHouse() ? `/houses/${lastHouse()}` : "/");
-
-  const appDock = $derived<Dest[]>([
-    { href: homeHref, label: t("nav.home"), icon: "home", routes: HOUSE_ROUTES },
+  // Sections link to the house on screen, or to the last one visited from the other pages.
+  const sectionHouse = $derived(currentHouse ?? lastHouse() ?? data.houses[0]?.id ?? null);
+  const sections = $derived<Dest[]>(
+    sectionHouse
+      ? [
+          { href: `/houses/${sectionHouse}`, label: t("house.tabs.devices"), icon: "devices", routes: ["home", "house", "device"] },
+          { href: `/houses/${sectionHouse}/agents`, label: t("house.tabs.agents"), icon: "router", routes: ["house-agents"] },
+          { href: `/houses/${sectionHouse}/members`, label: t("house.tabs.members"), icon: "group", routes: ["house-members"] },
+          { href: `/houses/${sectionHouse}/log`, label: t("house.tabs.log"), icon: "history", routes: ["house-log"] },
+        ]
+      : [{ href: "/", label: t("nav.home"), icon: "home", routes: ["home"] }],
+  );
+  const youDests = $derived<Dest[]>([
     { href: "/shared", label: t("nav.shared"), icon: "share", routes: ["shared"] },
     { href: "/activity", label: t("nav.activity"), icon: "activity", routes: ["activity"] },
   ]);
@@ -101,14 +110,29 @@
           <span class="min-w-0 flex-1 truncate">{h.name}</span>
           <span class="text-xs font-medium text-muted" title={t("nav.devicesOn", c)}>{c.on}/{c.n}</span>
         </a>
+        {#if on}
+          <div class="mb-1 ml-[1.35rem] flex flex-col gap-0.5 border-l border-on-surface/10 pl-2">
+            {#each sections as d (d.href)}
+              {@const here = d.routes.includes(route)}
+              <a
+                href={d.href}
+                use:link
+                class="flex items-center gap-2.5 rounded-lg px-2.5 py-1.5 text-[0.8125rem] font-semibold transition-colors {here ? 'bg-glass-strong text-on-surface' : 'text-muted hover:text-on-surface'}"
+                aria-current={here ? "page" : undefined}
+              >
+                <Icon name={d.icon} size={16} />{d.label}
+              </a>
+            {/each}
+          </div>
+        {/if}
       {/each}
       <button class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:bg-glass-strong hover:text-on-surface" onclick={() => (newHouse = true)}>
         <Icon name="add" size={18} />{t("house.newTitle")}
       </button>
 
       <div class="px-3 pt-4 pb-1.5 text-[0.7rem] font-bold tracking-wider text-muted uppercase">{t("nav.you")}</div>
-      {@render navLink(appDock[1]!, data.shared.length)}
-      {@render navLink(appDock[2]!)}
+      {@render navLink(youDests[0]!, data.shared.length)}
+      {@render navLink(youDests[1]!)}
       {#if session.user?.admin}
         <a href="/admin" use:link class="flex items-center gap-2.5 rounded-xl px-3 py-2 text-sm font-semibold text-muted hover:bg-glass-strong hover:text-on-surface">
           <Icon name="admin" size={18} />{t("nav.admin")}
@@ -158,19 +182,26 @@
 
   <!-- phones: dock -->
   <nav class="glass fixed bottom-4 left-1/2 z-20 flex -translate-x-1/2 gap-1 rounded-[22px] p-1.5 md:hidden" aria-label={t("nav.main")}>
-    {#each area === "admin" ? adminDests : appDock as d (d.href)}
+    {#snippet dockLink(d: Dest)}
       {@const on = d.routes.includes(route)}
       <a
         href={d.href}
         use:link
-        class="grid h-12 w-14 place-items-center rounded-2xl transition-colors {on ? 'bg-surface-1 text-on-surface shadow-soft dark:bg-glass-strong' : 'text-muted'}"
+        class="grid h-12 w-12 place-items-center rounded-2xl transition-colors {on ? 'bg-surface-1 text-on-surface shadow-soft dark:bg-glass-strong' : 'text-muted'}"
         aria-current={on ? "page" : undefined}
         aria-label={d.label}
         title={d.label}
       >
         <Icon name={d.icon} size={22} />
       </a>
-    {/each}
+    {/snippet}
+    {#if area === "admin"}
+      {#each adminDests as d (d.href)}{@render dockLink(d)}{/each}
+    {:else}
+      {#each sections as d (d.href)}{@render dockLink(d)}{/each}
+      <span class="mx-0.5 my-2.5 w-px bg-on-surface/12" aria-hidden="true"></span>
+      {#each youDests as d (d.href)}{@render dockLink(d)}{/each}
+    {/if}
   </nav>
 </div>
 
