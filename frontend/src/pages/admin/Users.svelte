@@ -9,15 +9,17 @@
   import TopBar from "../../components/TopBar.svelte";
   import LinkView from "../../dialogs/LinkView.svelte";
   import NewUserDialog from "../../dialogs/NewUserDialog.svelte";
+  import UsernameDialog from "../../dialogs/UsernameDialog.svelte";
   import { api } from "../../lib/api.ts";
   import { relativeTime, type Tone } from "../../lib/format.ts";
   import { t } from "../../lib/i18n/index.svelte.ts";
-  import { session } from "../../lib/session.svelte.ts";
+  import { session, setMe } from "../../lib/session.svelte.ts";
   import { confirmDialog, snack, snackError } from "../../lib/ui.svelte.ts";
 
   let users = $state<AdminUser[] | null>(null);
   let creating = $state(false);
   let linkFor = $state<{ username: string; link: PasswordLink } | null>(null);
+  let renaming = $state<AdminUser | null>(null);
 
   async function load() {
     try {
@@ -40,6 +42,15 @@
     } catch (err) {
       snackError(err);
     }
+  }
+
+  /** Errors are shown in the dialog (taken or invalid username). Renaming yourself updates the session. */
+  async function rename(u: AdminUser, username: string) {
+    if (username === u.username) return;
+    await api.admin.updateUser(u.id, { username });
+    if (u.id === session.user?.id) setMe(await api.auth.me());
+    snack(t("admin.users.renamed", { old: u.username, name: username }));
+    await load();
   }
 
   async function disable(u: AdminUser) {
@@ -114,6 +125,7 @@
               {/if}
               <Menu align="right">
                 {#snippet trigger(toggle)}<button class="icon-btn" onclick={toggle} aria-label={t("common.more")}><Icon name="more" /></button>{/snippet}
+                <MenuItem label={t("admin.users.rename")} icon="edit" onclick={() => (renaming = u)} />
                 <MenuItem label={t("admin.users.passwordLink")} icon="link" onclick={() => passwordLink(u)} />
                 {#if !self}
                   {#if u.admin}
@@ -142,3 +154,15 @@
   {#if linkFor}<LinkView link={linkFor.link} username={linkFor.username} />{/if}
   {#snippet actions()}<button class="btn-filled" onclick={() => (linkFor = null)}>{t("common.done")}</button>{/snippet}
 </Dialog>
+
+<UsernameDialog
+  open={renaming !== null}
+  icon="edit"
+  title={t("admin.users.renameTitle")}
+  subtitle={renaming?.username ?? ""}
+  initial={renaming?.username ?? ""}
+  hint={t("auth.usernameHint")}
+  submitLabel={t("common.save")}
+  onclose={() => (renaming = null)}
+  onsubmit={(username) => rename(renaming!, username)}
+/>

@@ -49,7 +49,7 @@ On the first start Awake creates the user **`admin`** with a random password, pr
 it must be changed at the first login. Lost it?
 
 ```bash
-docker compose exec awake node index.js reset-password admin    # Docker
+docker compose exec -u node awake node index.js reset-password admin    # Docker
 make reset-password ACCOUNT=admin                               # from the repository
 ```
 
@@ -68,7 +68,8 @@ awake.example.com {
 ### Accounts
 
 - Admins create users with a password (to be changed at first login) or with a one-time set-password
-  link to send them.
+  link to send them, and can rename any user, themselves included: after the first setup, rename
+  `admin` from **Administration → Users → ⋯ → Rename**.
 - **Administration → Server** decides whether people can sign up by themselves and whether new
   accounts are approved automatically or wait for an admin.
 - **Login providers**: Google, GitHub (also Enterprise) and any OpenID Connect provider (Authentik,

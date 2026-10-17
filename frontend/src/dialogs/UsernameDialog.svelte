@@ -1,5 +1,5 @@
 <script lang="ts">
-  // Asks for a username (and optionally a role): adding a house member or sharing a device.
+  // Asks for a username (and optionally a role): adding a house member, sharing a device, renaming a user.
   import type { Role } from "@awake/shared";
   import Dialog from "../components/Dialog.svelte";
   import TextField from "../components/TextField.svelte";
@@ -13,6 +13,8 @@
     subtitle = "",
     icon,
     withRole = false,
+    initial = "",
+    hint = "",
     submitLabel,
     onclose,
     onsubmit,
@@ -22,6 +24,9 @@
     subtitle?: string;
     icon: IconName;
     withRole?: boolean;
+    /** Prefilled username (renaming). */
+    initial?: string;
+    hint?: string;
     submitLabel: string;
     onclose: () => void;
     onsubmit: (username: string, role: Role) => Promise<void>;
@@ -34,7 +39,7 @@
 
   $effect(() => {
     if (open) {
-      username = "";
+      username = initial;
       role = "member";
       error = "";
     }
@@ -56,7 +61,7 @@
 
 <Dialog {open} {onclose} {icon} {title} {subtitle}>
   <form class="space-y-5" onsubmit={(e) => (e.preventDefault(), submit())}>
-    <TextField label={t("auth.username")} bind:value={username} autocapitalize="none" autocomplete="off" {error} />
+    <TextField label={t("auth.username")} bind:value={username} autocapitalize="none" autocomplete="off" {error} {hint} />
     {#if withRole}
       <fieldset class="space-y-2">
         <legend class="field-label">{t("members.role")}</legend>
