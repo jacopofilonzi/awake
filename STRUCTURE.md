@@ -94,7 +94,7 @@ Every variable, with defaults and meaning, is in [.env.example](.env.example): `
 
 Svelte 5 (runes) PWA, Material 3 with a low-chroma slate palette ("ardesia"); the admin area switches to a
 muted warm scheme (`.scheme-admin`). TypeScript 6 here (svelte-check does not support 7 yet). In dev Vite
-runs on :5173 and proxies `/api` and `/agent` to :8080; in production the backend serves `frontend/dist`.
+runs on :5173, listening on the LAN (`host: true`: board agents and phones connect to the PC's address), and proxies `/api` and `/agent` to :8080; in production the backend serves `frontend/dist`.
 
 | Path | Responsibility |
 | --- | --- |
@@ -150,7 +150,8 @@ checked by compiling and by running it against `make dev`. Details in its README
 ```text
 agents/arduino-mkr-wifi-1010/awake-agent/
 ├── awake-agent.ino     setup/loop, watchdog; blinks on a configuration error
-├── config.example.h    Wi-Fi, server, token, WoL port, OUTPUTS (Button/Switch helpers); copy to config.h (git-ignored)
+├── config.example.h    Wi-Fi, server, token, WoL port, OUTPUTS (Button/Switch helpers), STATUS_LEDS
+│                       (StatusLed/RgbStatusLed helpers); copy to config.h (git-ignored)
 ├── sketch.yaml         arduino-cli profile: pinned core and libraries
 └── src/
     ├── agent.cpp       protocol: Wi-Fi, states (waiting/awaiting welcome/online/stopped), hello, hb,
@@ -158,6 +159,7 @@ agents/arduino-mkr-wifi-1010/awake-agent/
     ├── ws_client.cpp   minimal WebSocket client (8 KB messages, keeps close codes); ArduinoHttpClient's
     │                   truncates at 128 bytes and drops the close code
     ├── outputs.cpp     buttons timed with millis(), switches, debounced local buttons (INPUT_PULLUP)
+    ├── status_led.cpp  status LEDs (single-colour or RGB): blink patterns/colours per agent state, command blip
     ├── net.cpp         magic packet (limited + directed broadcast), ICMP via the NINA module, TCP probe
     │                   (fast failure = refused = up: the module can't tell refused from timeout)
     ├── backoff.cpp     §8 delays with close-code minimums

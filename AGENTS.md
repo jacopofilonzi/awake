@@ -218,6 +218,8 @@ migration) and its own branch in `backend/src/auth/oauth.ts` like GitHub.
 - `USER` / `USERNAME` are set by the shell: Makefile variables use other names (`ACCOUNT=`).
 - npm blocks esbuild's postinstall script; the build still works through its platform package.
 - The frontend is on TypeScript 6 (svelte-check requires < 7) while the backend is on 7: don't unify them.
+- The dev server listens on the LAN (`server.host: true` in `frontend/vite.config.ts`): board agents
+  connect to `<PC LAN IP>:5173`. Keep it that way; a localhost-only Vite leaves them offline.
 - In dev the UI is on :5173: set `PUBLIC_URL=http://localhost:5173` in `.env`, otherwise the Origin check
   rejects state-changing requests and login-provider redirects go to the wrong host.
 - Svelte effects that call async loaders must `untrack` reads of state the loader updates (e.g. device
