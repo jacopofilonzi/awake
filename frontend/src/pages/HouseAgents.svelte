@@ -1,8 +1,10 @@
 <script lang="ts">
   import type { Agent, House } from "@awake/shared";
+  import AgentDetails from "../components/AgentDetails.svelte";
   import Icon from "../components/Icon.svelte";
   import Menu from "../components/Menu.svelte";
   import MenuItem from "../components/MenuItem.svelte";
+  import SignalBars from "../components/SignalBars.svelte";
   import StatusPill from "../components/StatusPill.svelte";
   import AgentDialog from "../dialogs/AgentDialog.svelte";
   import { api } from "../lib/api.ts";
@@ -17,6 +19,8 @@
   const canEdit = $derived(house.role === "owner" || house.role === "editor");
   let agents = $state<Agent[] | null>(null);
   let dialog = $state<{ agent: Agent | null; token: string | null } | null>(null);
+  // Agents whose details are expanded (kept across the refetches of live events).
+  let open = $state<Record<string, boolean>>({});
 
   async function load() {
     try {
@@ -83,6 +87,14 @@
             <p class="mt-0.5 text-xs text-on-surface-variant">
               {a.firmware ?? t("agent.neverConnected")}{#if a.lastSeen && !a.online} · {t("agent.seen", { when: relativeTime(a.lastSeen) })}{/if}
             </p>
+            {#if a.details?.info}
+              {@const info = a.details.info}
+              <p class="mt-1.5 flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted">
+                {#if info.platform}<span>{info.platform}</span>{/if}
+                {#if info.ip}<span class="font-mono">{info.ip}</span>{/if}
+                {#if info.rssi !== undefined}<span class="inline-flex items-center gap-1.5"><SignalBars rssi={info.rssi} />{info.ssid ?? ""}</span>{/if}
+              </p>
+            {/if}
           </div>
           {#if canEdit}
             <Menu align="right">
@@ -93,6 +105,19 @@
             </Menu>
           {/if}
         </div>
+        {#if a.details}
+          {@const details = a.details}
+          <div class="mt-3 border-t border-on-surface/8 pt-2">
+            <button
+              class="flex w-full items-center gap-1.5 py-1 text-xs font-semibold text-on-surface-variant hover:text-on-surface"
+              onclick={() => (open[a.id] = !open[a.id])}
+              aria-expanded={open[a.id] === true}
+            >
+              <Icon name={open[a.id] ? "arrow-drop-down" : "chevron-right"} size={14} />{open[a.id] ? t("agent.details.hide") : t("agent.details.show")}
+            </button>
+            {#if open[a.id]}<div class="pt-2 pb-1"><AgentDetails agent={a} {details} /></div>{/if}
+          </div>
+        {/if}
         <div class="mt-3 border-t border-on-surface/8 pt-2">
           <p class="py-1 text-xs font-medium text-on-surface-variant">{t("agent.outputs")}</p>
           {#if a.outputs.length === 0}

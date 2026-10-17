@@ -66,3 +66,39 @@ export function logLine(e: LogEntry): { action: string; who: string; outcome: { 
 export function isLit(d: Device): boolean {
   return deviceState(d).tone === "ok";
 }
+
+/** "3 d 4 h", "5 h 12 min", "40 s": the two largest units of a duration in seconds. */
+export function duration(seconds: number): string {
+  const unit = (n: number, u: "day" | "hour" | "minute" | "second") =>
+    new Intl.NumberFormat(i18n.locale, { style: "unit", unit: u, unitDisplay: "short" }).format(n);
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  if (d) return h ? `${unit(d, "day")} ${unit(h, "hour")}` : unit(d, "day");
+  if (h) return m ? `${unit(h, "hour")} ${unit(m, "minute")}` : unit(h, "hour");
+  if (m) return unit(m, "minute");
+  return unit(Math.max(0, Math.floor(seconds)), "second");
+}
+
+/** Wi-Fi signal: 1–4 bars and a word, from RSSI in dBm (usual thresholds for 2.4 GHz). */
+export function signal(rssi: number): { bars: 1 | 2 | 3 | 4; label: string } {
+  if (rssi >= -55) return { bars: 4, label: t("agent.details.signal.excellent") };
+  if (rssi >= -67) return { bars: 3, label: t("agent.details.signal.good") };
+  if (rssi >= -75) return { bars: 2, label: t("agent.details.signal.fair") };
+  return { bars: 1, label: t("agent.details.signal.weak") };
+}
+
+export function bytes(n: number): string {
+  const fmt = (v: number, u: "kilobyte" | "megabyte" | "gigabyte" | "byte") =>
+    new Intl.NumberFormat(i18n.locale, { style: "unit", unit: u, unitDisplay: "short", maximumFractionDigits: 1 }).format(v);
+  if (n >= 2 ** 30) return fmt(n / 2 ** 30, "gigabyte");
+  if (n >= 2 ** 20) return fmt(n / 2 ** 20, "megabyte");
+  if (n >= 1024) return fmt(n / 1024, "kilobyte");
+  return fmt(n, "byte");
+}
+
+/** Why an agent's connection ended, from the WebSocket close code (docs/PROTOCOL.md §7). */
+export function closeReason(code: number): string {
+  const known = [1000, 1001, 1006, 4000, 4001, 4002, 4003, 4004, 4008, 4029];
+  return known.includes(code) ? t(`agent.details.close.${code}` as Key) : t("agent.details.close.other", { code });
+}
