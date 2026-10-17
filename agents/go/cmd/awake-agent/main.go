@@ -20,6 +20,7 @@ import (
 	"github.com/jacopofilonzi/awake/agents/go/internal/console"
 	"github.com/jacopofilonzi/awake/agents/go/internal/outputs"
 	"github.com/jacopofilonzi/awake/agents/go/internal/probe"
+	"github.com/jacopofilonzi/awake/agents/go/internal/sysinfo"
 	"github.com/jacopofilonzi/awake/agents/go/internal/wol"
 )
 
@@ -60,6 +61,8 @@ func run() int {
 	}
 	log := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: level}))
 	slog.SetDefault(log)
+	// Created first: info's uptime counts from here.
+	sys := sysinfo.New(log)
 
 	cfg, err := loadConfig(*configPath, explicit["config"], log)
 	if err != nil {
@@ -107,6 +110,7 @@ func run() int {
 			Log:    log,
 		},
 		Prober: probe.New(log),
+		Info:   sys,
 		Log:    log,
 	})
 

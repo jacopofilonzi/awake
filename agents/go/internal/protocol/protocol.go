@@ -17,6 +17,13 @@ const MaxOutputs = 32
 // MaxFirmwareLen is the maximum length of the `fw` field in hello (§3).
 const MaxFirmwareLen = 64
 
+// MaxPlatformLen and MaxHostLen bound the `platform` and `host` fields of info (§5.2); the server
+// ignores longer values.
+const (
+	MaxPlatformLen = 64
+	MaxHostLen     = 64
+)
+
 // Message types (`t`).
 const (
 	TypeHello       = "hello"
@@ -29,6 +36,7 @@ const (
 	TypeAck         = "ack"
 	TypeProbeResult = "probe_result"
 	TypeOutState    = "out_state"
+	TypeInfo        = "info"
 )
 
 // Output modes (§1).
@@ -88,6 +96,32 @@ type Hello struct {
 	Token   string       `json:"token"`
 	FW      string       `json:"fw,omitempty"`
 	Outputs []OutputInfo `json:"outputs,omitempty"`
+	// Info is the agent's self-description (§5.2), nil when it knows nothing about itself.
+	Info *Info `json:"info,omitempty"`
+}
+
+// Info is what the agent knows about itself (§5.2), sent as the `info` field of hello and in the
+// periodic info message. Every field is optional and a missing field means "unknown", so absent values
+// must not be sent: strings use omitempty, integers are pointers because 0 is a meaningful value
+// (uptime 0, rssi 0 dBm).
+type Info struct {
+	Platform string `json:"platform,omitempty"`
+	Host     string `json:"host,omitempty"`
+	IP       string `json:"ip,omitempty"`
+	SSID     string `json:"ssid,omitempty"`
+	RSSI     *int   `json:"rssi,omitempty"`
+	Uptime   *int64 `json:"uptime,omitempty"`
+	Reset    string `json:"reset,omitempty"`
+	Mem      *int64 `json:"mem,omitempty"`
+}
+
+// IsZero reports whether no field is known.
+func (i Info) IsZero() bool { return i == Info{} }
+
+// InfoMessage is the periodic `info` message (§5.2): the same fields as Info, at the top level.
+type InfoMessage struct {
+	T string `json:"t"`
+	Info
 }
 
 // Welcome is the server's answer to a valid hello (§3).

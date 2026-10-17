@@ -9,7 +9,8 @@ the Awake server and, on request:
 - drives its **outputs**: `button` outputs (short/long press) and `switch` outputs (on/off), reporting
   local switch changes to the server.
 
-It reconnects forever with exponential backoff and jitter, honouring the server's close codes.
+It reconnects forever with exponential backoff and jitter, honouring the server's close codes, and
+describes itself to the server (platform, hostname, LAN IP, uptime: see [Agent info](#agent-info)).
 
 ## Build
 
@@ -130,6 +131,21 @@ printf 'toggle lamp\nstatus\n' | AWAKE_TOKEN=awk_... ./awake-agent -console
     `err: "icmp unsupported"`; configure a TCP port for the device instead.
 - The probe timeout from the server is clamped to 100 ms – 30 s (2 s when absent).
 
+## Agent info
+
+The agent describes itself in `hello` (`info` field) and then sends an `info` message every 5 minutes
+while connected (PROTOCOL.md §5.2). The server shows it to the house owners and editors.
+
+| Field | Value |
+|---|---|
+| `platform` | `GOOS/GOARCH`, e.g. `windows/amd64`. On Linux boards with a device tree (Raspberry Pi) the model from `/proc/device-tree/model` is appended: `linux/arm64 (Raspberry Pi 4 Model B Rev 1.4)`. Max 64 bytes. |
+| `host` | The hostname (left out when longer than 64 bytes). |
+| `ip` | The local IPv4 address of the connection to the server, i.e. the LAN address the agent reaches the server from. Left out when it is IPv6 or loopback (server on the same machine). |
+| `uptime` | Seconds since the agent process started. |
+
+`ssid`, `rssi`, `reset` and `mem` are not sent: they matter mostly on microcontrollers. A value that
+cannot be read is logged at debug level and left out; info never affects the connection.
+
 ## Running as a service
 
 Any supervisor works (systemd, a Windows service wrapper, launchd): run the binary with
@@ -146,6 +162,7 @@ internal/client/      connection loop, handshake, command dispatch, heartbeat, b
 internal/outputs/     Manager, Driver/Line interfaces, sim driver
 internal/wol/         magic packet, broadcast targets
 internal/probe/       TCP probe, ICMP (icmp_windows.go / icmp_other.go)
+internal/sysinfo/     agent info: platform (+ board model, model_linux.go), hostname, LAN IPv4, uptime
 internal/console/     stdin commands
 ```
 
@@ -162,6 +179,8 @@ internal/console/     stdin commands
 - [x] Handles `press`: acks when the press starts, rejects `busy` while pressing, `no long press` when not configured.
 - [x] Handles `set`: acks with the resulting `on`.
 - [x] Sends `out_state` for every switch change not caused by `set`, only while connected.
+- [x] Optional: describes itself with `info` (in `hello`, then every 5 minutes): platform, LAN IP and
+      uptime (no Wi-Fi signal, reset reason or free memory on a PC).
 - [x] Ignores unknown message types and fields.
 - [x] Reconnects forever with exponential backoff + jitter, honouring the close codes of §7.
 - [x] Never logs the token.

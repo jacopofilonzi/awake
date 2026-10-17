@@ -176,7 +176,8 @@ type harness struct {
 
 func quietLogger() *slog.Logger { return slog.New(slog.NewTextHandler(io.Discard, nil)) }
 
-func start(t *testing.T) *harness {
+// start runs a client against a fake server; configure (optional) adjusts the client before Run.
+func start(t *testing.T, configure ...func(*Client)) *harness {
 	t.Helper()
 	fs := newFakeServer(t)
 	mgr, err := outputs.New([]outputs.Config{
@@ -194,6 +195,9 @@ func start(t *testing.T) *harness {
 	})
 	h.client.hbUnit = 10 * time.Millisecond
 	h.client.delay = func(int, time.Duration) (time.Duration, time.Duration) { return 20 * time.Millisecond, 0 }
+	for _, f := range configure {
+		f(h.client)
+	}
 	ctx, cancel := context.WithCancel(context.Background())
 	h.cancel = cancel
 	go func() { h.result <- h.client.Run(ctx) }()

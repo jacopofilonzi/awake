@@ -6,7 +6,8 @@
 //   - each command runs in its own goroutine, so a slow probe never delays a heartbeat or another command;
 //   - one writer goroutine owns all socket writes, fed by a buffered queue: writes are serialized and a
 //     command can never block the heartbeat for longer than one write;
-//   - a heartbeat goroutine enqueues `hb` every `hb` seconds.
+//   - a heartbeat goroutine enqueues `hb` every `hb` seconds;
+//   - an info goroutine enqueues `info` every 5 minutes (§5.2), when an InfoSource is configured.
 //
 // Reads use contexts that are NOT derived from the shutdown context: coder/websocket hard-closes the
 // connection when a read context is cancelled, which would prevent the clean 1000 close on shutdown.
@@ -15,6 +16,10 @@
 // Switch changes not caused by `set` reach the client through the outputs Manager's callback and are
 // sent as out_state only while a session is established (after welcome). Changes made between the hello
 // snapshot and the welcome are caught by diffing the two snapshots under the Manager's lock.
+//
+// The `ip` of info is the local address of the TCP connection to the server: the client dials through
+// its own http.Transport whose DialContext records it. That is the address the LAN actually uses to
+// reach the server, without guessing among interfaces or sending anything extra.
 package client
 
 import (
@@ -24,8 +29,11 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand/v2"
+	"net"
+	"net/http"
 	"net/netip"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"github.com/coder/websocket"
@@ -45,6 +53,12 @@ type Prober interface {
 	Probe(ctx context.Context, ip netip.Addr, port int, timeout time.Duration) (probe.Result, error)
 }
 
+// InfoSource describes the agent for info (§5.2). local is the local address of the connection to the
+// server, nil when unknown. It must not fail: unknown fields are just left empty.
+type InfoSource interface {
+	Collect(local net.Addr) protocol.Info
+}
+
 // Options configures a Client.
 type Options struct {
 	URL      string
@@ -53,7 +67,9 @@ type Options struct {
 	Outputs  *outputs.Manager
 	Waker    Waker
 	Prober   Prober
-	Log      *slog.Logger
+	// Info is optional: nil sends no info at all.
+	Info InfoSource
+	Log  *slog.Logger
 }
 
 // ErrVersionUnsupported is returned by Run after close code 4004: reconnecting is pointless until the
@@ -72,6 +88,8 @@ const (
 	commandTimeout = 4 * time.Second
 	// probeGrace is added to the probe timeout; the reply must arrive within timeout + 3 s (§4.2).
 	probeGrace = 2 * time.Second
+	// infoInterval is how often info is sent after the hello (§5.2).
+	infoInterval = 5 * time.Minute
 )
 
 // Status is a snapshot of the connection, for the console.
@@ -92,11 +110,18 @@ type Client struct {
 	sess   *session // non-nil only after welcome
 	status Status
 
+	// http dials the WebSocket handshake; its transport stores each new connection's local address in
+	// localAddr. Dials are sequential (one connection at a time), so the value read right after Dial
+	// belongs to that connection.
+	http      *http.Client
+	localAddr atomic.Pointer[net.Addr]
+
 	// Tunables, replaced by tests.
 	dialTimeout      time.Duration
 	handshakeTimeout time.Duration
 	writeTimeout     time.Duration
 	hbUnit           time.Duration // unit of welcome.hb (a second in production)
+	infoEvery        time.Duration
 	delay            func(code int, prev time.Duration) (wait, next time.Duration)
 }
 
@@ -109,12 +134,37 @@ func New(opts Options) *Client {
 		handshakeTimeout: 15 * time.Second,
 		writeTimeout:     10 * time.Second,
 		hbUnit:           time.Second,
+		infoEvery:        infoInterval,
 		delay: func(code int, prev time.Duration) (time.Duration, time.Duration) {
 			return NextDelay(code, prev, rand.Float64)
 		},
 	}
+	c.http = &http.Client{Transport: c.newTransport()}
 	opts.Outputs.SetOnChange(c.onOutputChange)
 	return c
+}
+
+// newTransport is the default transport (proxy from the environment, system TLS roots, timeouts) with
+// a dial hook that records the local address. Keep-alives are off: a WebSocket connection is hijacked
+// after the handshake, so pooling would only keep a failed handshake's connection, and reusing it would
+// skip the dial and leave the recorded address unset.
+func (c *Client) newTransport() *http.Transport {
+	tr := &http.Transport{Proxy: http.ProxyFromEnvironment}
+	if def, ok := http.DefaultTransport.(*http.Transport); ok {
+		tr = def.Clone()
+	}
+	tr.DisableKeepAlives = true
+	dialer := &net.Dialer{Timeout: 30 * time.Second, KeepAlive: 30 * time.Second}
+	tr.DialContext = func(ctx context.Context, network, addr string) (net.Conn, error) {
+		conn, err := dialer.DialContext(ctx, network, addr)
+		if err != nil {
+			return nil, err
+		}
+		local := conn.LocalAddr()
+		c.localAddr.Store(&local)
+		return conn, nil
+	}
+	return tr
 }
 
 // Status returns the current connection status.
@@ -272,10 +322,15 @@ func (c *Client) connectOnce(ctx context.Context) (code int, welcomed bool, err 
 
 	c.log.Info("connecting", "server", c.opts.URL)
 	dctx, cancel := context.WithTimeout(ctx, c.dialTimeout)
-	conn, _, err := websocket.Dial(dctx, c.opts.URL, nil)
+	c.localAddr.Store(nil)
+	conn, _, err := websocket.Dial(dctx, c.opts.URL, &websocket.DialOptions{HTTPClient: c.http})
 	cancel()
 	if err != nil {
 		return -1, false, fmt.Errorf("dial: %w", err)
+	}
+	var local net.Addr
+	if p := c.localAddr.Load(); p != nil {
+		local = *p
 	}
 	conn.SetReadLimit(protocol.MaxMessageSize)
 
@@ -304,7 +359,9 @@ func (c *Client) connectOnce(ctx context.Context) (code int, welcomed bool, err 
 	}()
 
 	helloStates := c.opts.Outputs.Snapshot()
-	if err := c.writeDirect(conn, buildHello(c.opts.Token, c.opts.Firmware, helloStates)); err != nil {
+	hello := buildHello(c.opts.Token, c.opts.Firmware, helloStates)
+	hello.Info = c.collectInfo(local)
+	if err := c.writeDirect(conn, hello); err != nil {
 		return closeCode(err), false, fmt.Errorf("send hello: %w", err)
 	}
 
@@ -331,6 +388,10 @@ func (c *Client) connectOnce(ctx context.Context) (code int, welcomed bool, err 
 	workers.Add(2)
 	go func() { defer workers.Done(); c.writer(sess) }()
 	go func() { defer workers.Done(); c.heartbeat(sess, hb) }()
+	if c.opts.Info != nil {
+		workers.Add(1)
+		go func() { defer workers.Done(); c.infoLoop(sess, local) }()
+	}
 
 	return c.readLoop(ctx, sess, hb)
 }
@@ -477,6 +538,44 @@ func (c *Client) heartbeat(sess *session, every time.Duration) {
 			}
 		}
 	}
+}
+
+// infoLoop sends info every infoEvery (§5.2). The hello already carried it, so the first one waits a
+// full interval. Info is best effort: a failure to queue it is logged and never ends the session.
+func (c *Client) infoLoop(sess *session, local net.Addr) {
+	t := time.NewTicker(c.infoEvery)
+	defer t.Stop()
+	for {
+		select {
+		case <-sess.ctx.Done():
+			return
+		case <-t.C:
+			info := c.collectInfo(local)
+			if info == nil {
+				continue
+			}
+			// trySend: info is not worth waiting for when the queue is full of command replies.
+			ok, err := sess.trySend(protocol.InfoMessage{T: protocol.TypeInfo, Info: *info})
+			switch {
+			case err != nil:
+				c.log.Warn("cannot encode info", "err", err)
+			case !ok:
+				c.log.Debug("send queue full: info skipped")
+			}
+		}
+	}
+}
+
+// collectInfo returns the agent's description, or nil when there is none to send.
+func (c *Client) collectInfo(local net.Addr) *protocol.Info {
+	if c.opts.Info == nil {
+		return nil
+	}
+	info := c.opts.Info.Collect(local)
+	if info.IsZero() {
+		return nil
+	}
+	return &info
 }
 
 // writeDirect writes before the writer goroutine exists (hello).
