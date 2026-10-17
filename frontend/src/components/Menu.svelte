@@ -34,7 +34,8 @@
 <div class="relative" bind:this={root}>
   {@render trigger(toggle, open)}
   {#if open}
-    <div class="sheet-scrim fixed inset-0 z-40 bg-scrim backdrop-blur-[2px] sm:hidden" aria-hidden="true"></div>
+    <!-- The scrim is inside `root`, so the outside-click check above doesn't see it: it closes the sheet itself. -->
+    <div class="sheet-scrim fixed inset-0 z-40 bg-scrim backdrop-blur-[2px] sm:hidden" aria-hidden="true" onpointerdown={() => (open = false)}></div>
     <!-- svelte-ignore a11y_click_events_have_key_events -->
     <div
       role="menu"
