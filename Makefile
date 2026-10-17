@@ -31,6 +31,9 @@ help:
 	@echo "  make agent-test      go test"
 	@echo "  make agent-build     cross-compile into $(AGENT_DIR)/dist"
 	@echo ""
+	@echo "Arduino MKR WiFi 1010 agent (needs arduino-cli; not part of make check)"
+	@echo "  make -C agents/arduino-mkr-wifi-1010 config | build | upload PORT=COM8 | monitor PORT=COM8"
+	@echo ""
 	@echo "  make clean           remove build output"
 
 # ---------- server ----------

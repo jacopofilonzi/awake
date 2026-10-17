@@ -11,7 +11,8 @@ repo/
 ├── shared/           TypeScript — API types, error codes, zod validation (backend + UI)
 ├── agents/
 │   ├── README.md     list of agents, how to contribute one
-│   └── go/           Go 1.27 — reference agent (PC, Raspberry Pi), simulated outputs
+│   ├── go/           Go 1.27 — reference agent (PC, Raspberry Pi), simulated outputs
+│   └── arduino-mkr-wifi-1010/  C++ (arduino-cli) — firmware for the MKR WiFi 1010, GPIO outputs
 ├── docs/PROTOCOL.md  agent ↔ server protocol v1: the only contract with the agents
 ├── Dockerfile        build stage (npm ci, vite, esbuild) → node:24-alpine: backend bundle + UI in /app/web
 ├── docker-compose.yml
@@ -138,3 +139,27 @@ agents/go/
 
 Switch changes caused by `set` are reported only in its ack; every other change (console, future
 physical inputs) becomes `out_state` while connected, and is carried by the next `hello` otherwise.
+
+## Arduino agent (`agents/arduino-mkr-wifi-1010`)
+
+Firmware for the MKR WiFi 1010 (SAMD21 + NINA-W102 Wi-Fi). Built with arduino-cli through its own
+Makefile (`config|build|upload|monitor`, `PORT=COM8`); core and libraries pinned in `sketch.yaml`
+(arduino:samd, WiFiNINA, ArduinoJson). Not part of `make check` (needs arduino-cli). No unit tests: it is
+checked by compiling and by running it against `make dev`. Details in its README.
+
+```text
+agents/arduino-mkr-wifi-1010/awake-agent/
+├── awake-agent.ino     setup/loop, watchdog; blinks on a configuration error
+├── config.example.h    Wi-Fi, server, token, WoL port, OUTPUTS (Button/Switch helpers); copy to config.h (git-ignored)
+├── sketch.yaml         arduino-cli profile: pinned core and libraries
+└── src/
+    ├── agent.cpp       protocol: Wi-Fi, states (waiting/awaiting welcome/online/stopped), hello, hb,
+    │                   3×hb silence, wake/probe/press/set, out_state
+    ├── ws_client.cpp   minimal WebSocket client (8 KB messages, keeps close codes); ArduinoHttpClient's
+    │                   truncates at 128 bytes and drops the close code
+    ├── outputs.cpp     buttons timed with millis(), switches, debounced local buttons (INPUT_PULLUP)
+    ├── net.cpp         magic packet (limited + directed broadcast), ICMP via the NINA module, TCP probe
+    │                   (fast failure = refused = up: the module can't tell refused from timeout)
+    ├── backoff.cpp     §8 delays with close-code minimums
+    └── watchdog.cpp, log.cpp, version.h
+```

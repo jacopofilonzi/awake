@@ -7,8 +7,9 @@ outbound WebSocket connection to the Awake server, so nothing has to be opened o
 | Agent | Runs on | Status |
 |---|---|---|
 | [`go/`](go/) | Windows, Linux, macOS, Raspberry Pi (a single binary, no runtime) | Reference implementation |
+| [`arduino-mkr-wifi-1010/`](arduino-mkr-wifi-1010/) | Arduino MKR WiFi 1010 (C++, arduino-cli) | Wake-on-LAN, probes, relay outputs on GPIO |
 
-More boards (Arduino MKR WiFi 1010, ESP32, …) will be added as `agents/<board-name>/`.
+More boards (ESP32, …) can be added as `agents/<board-name>/`.
 
 ## Writing an agent for a new board
 

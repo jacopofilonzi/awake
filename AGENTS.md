@@ -92,7 +92,8 @@ and align this project's copies with it:
 
 - **[docs/PROTOCOL.md](docs/PROTOCOL.md) is the only contract between server and agents**: agents are in
   other languages and share no code. Any change to the agent messages updates PROTOCOL.md,
-  `backend/src/agents/protocol.ts` and the Go agent in the same change; breaking changes bump the
+  `backend/src/agents/protocol.ts` and the Go agent in the same change (the in-repo board agents, e.g.
+  `agents/arduino-mkr-wifi-1010`, follow before the next release); breaking changes bump the
   protocol version (`PROTOCOL_VERSION` in `shared/src/index.ts`), since flashed microcontrollers can't
   be updated in lockstep with the server.
 - **The server never knows the agents' hardware**: outputs are declared by the agent (id, mode, long
