@@ -6,7 +6,7 @@
   import TextField from "../components/TextField.svelte";
   import TopBar from "../components/TopBar.svelte";
   import { api } from "../lib/api.ts";
-  import { i18n, setLocale, t, type Key, type Locale } from "../lib/i18n/index.svelte.ts";
+  import { i18n, LANGUAGES, setLocale, t, type Key, type Locale } from "../lib/i18n/index.svelte.ts";
   import { clearQuery, router } from "../lib/router.svelte.ts";
   import { logout, session, setMe } from "../lib/session.svelte.ts";
   import { setTheme, theme, type ThemeChoice } from "../lib/theme.svelte.ts";
@@ -114,8 +114,10 @@
     <section class="card-outlined space-y-4 p-5">
       <h2 class="text-base font-medium">{t("account.preferences")}</h2>
       <div>
-        <span class="field-label">{t("account.language")}</span>
-        <Segmented label={t("account.language")} bind:value={locale} options={[{ value: "it", label: "Italiano" }, { value: "en", label: "English" }]} />
+        <label class="field-label" for="language">{t("account.language")}</label>
+        <select id="language" class="input sm:max-w-xs" bind:value={locale}>
+          {#each LANGUAGES as l (l.locale)}<option value={l.locale}>{l.name}</option>{/each}
+        </select>
       </div>
       <div>
         <span class="field-label">{t("account.theme")}</span>

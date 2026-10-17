@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { Snippet } from "svelte";
-  import { i18n, setLocale, t } from "../lib/i18n/index.svelte.ts";
+  import { i18n, LANGUAGES, setLocale, t, type Locale } from "../lib/i18n/index.svelte.ts";
   import { cycleTheme, theme } from "../lib/theme.svelte.ts";
   import Icon from "./Icon.svelte";
 
@@ -18,11 +18,12 @@
       <div class="mt-6">{@render children()}</div>
     </div>
     <div class="mt-4 flex items-center justify-between px-2">
-      <div class="flex gap-1 text-xs">
-        {#each ["it", "en"] as const as l (l)}
-          <button class="rounded-md px-2 py-1 uppercase {i18n.locale === l ? 'bg-on-surface text-surface' : 'text-muted hover:text-on-surface'}" onclick={() => setLocale(l)}>{l}</button>
-        {/each}
-      </div>
+      <label class="flex items-center gap-1.5 text-sm text-muted">
+        <Icon name="translate" size={16} />
+        <select class="rounded-lg bg-transparent py-1 pr-1 font-medium text-on-surface-variant outline-none hover:text-on-surface" value={i18n.locale} onchange={(e) => setLocale(e.currentTarget.value as Locale)} aria-label={t("account.language")}>
+          {#each LANGUAGES as l (l.locale)}<option value={l.locale}>{l.name}</option>{/each}
+        </select>
+      </label>
       <button class="icon-btn" onclick={cycleTheme} title={t(`theme.${theme.choice}`)} aria-label={t("theme.toggle")}><Icon name={theme.choice === "dark" ? "dark-mode" : theme.choice === "light" ? "light-mode" : "system-theme"} /></button>
     </div>
   </div>

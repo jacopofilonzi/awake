@@ -113,7 +113,7 @@ runs on :5173, listening on the LAN (`host: true`: board agents and phones conne
 | `lib/router.svelte.ts` | history router (path patterns → route names), `link` action |
 | `lib/session.svelte.ts` | public config + current user, boot, logout |
 | `lib/data.svelte.ts` | houses and devices kept live by `/api/events` (SSE); `version` (per house) and `actions` counters make pages refetch |
-| `lib/i18n/` | `en.ts` defines the keys, `it.ts` must match (type-checked); `errors` must cover every `ErrorCode` |
+| `lib/i18n/` | `en.ts` defines the keys, every other dictionary must match (type-checked); `LANGUAGES` lists the languages (native name, dictionary) for the selectors; `errors` must cover every `ErrorCode` |
 | `lib/ui.svelte.ts` | snackbar, promise-based confirm dialog, error → text |
 | `lib/format.ts` | device status/kind/icon, relative times, log lines |
 | `lib/icons.ts` | the Lucide icons used (UI names → `lucide-static` SVGs, imported raw: only those are bundled) |

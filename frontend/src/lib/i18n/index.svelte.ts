@@ -1,13 +1,13 @@
-// i18n: `en.ts` is the source of truth; `it.ts` must have exactly the same keys (type-checked).
-// t("section.key", { param }) replaces {param} placeholders. Language: the user's choice (stored in
-// the browser), else the browser language, else English.
+// i18n: `en.ts` is the source of truth; every other dictionary must have exactly the same keys
+// (type-checked). t("section.key", { param }) replaces {param} placeholders. Language: the user's choice
+// (stored in the browser), else the first of the browser's languages we have, else English.
+// Adding a language: a dictionary file like it.ts, and one entry in LANGUAGES.
 
 import { en } from "./en.ts";
 import { it } from "./it.ts";
 import { load, save } from "../storage.ts";
 
-export const LOCALES = ["it", "en"] as const;
-export type Locale = (typeof LOCALES)[number];
+export type Locale = "en" | "it";
 
 type Leaves<T> = { [K in keyof T]: T[K] extends string ? string : Leaves<T[K]> };
 /** Shape every dictionary must have. */
@@ -18,12 +18,23 @@ type Paths<T, P extends string = ""> = {
 }[keyof T & string];
 export type Key = Paths<Messages>;
 
-const dictionaries: Record<Locale, Messages> = { en, it };
+/** The languages of the UI, in the order the selector lists them; `name` is the language's own name. */
+export const LANGUAGES: readonly { locale: Locale; name: string; messages: Messages }[] = [
+  { locale: "en", name: "English", messages: en },
+  { locale: "it", name: "Italiano", messages: it },
+];
+
+const dictionaries = Object.fromEntries(LANGUAGES.map((l) => [l.locale, l.messages])) as Record<Locale, Messages>;
+const isLocale = (v: string | null): v is Locale => LANGUAGES.some((l) => l.locale === v);
 
 function initial(): Locale {
   const stored = load("locale");
-  if (stored === "it" || stored === "en") return stored;
-  return navigator.language.toLowerCase().startsWith("it") ? "it" : "en";
+  if (isLocale(stored)) return stored;
+  for (const tag of navigator.languages ?? [navigator.language]) {
+    const base = tag.toLowerCase().split("-")[0] ?? "";
+    if (isLocale(base)) return base;
+  }
+  return "en";
 }
 
 export const i18n = $state<{ locale: Locale }>({ locale: initial() });
