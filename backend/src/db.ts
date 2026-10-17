@@ -8,7 +8,8 @@
 // - users / identities (external logins) / sessions / password_tokens (set-password links) /
 //   oauth_states (pending OAuth redirects)
 // - houses, with house_members (role owner|editor|member)
-// - agents (per house) and agent_outputs (as last declared by the agent in its hello)
+// - agents (per house; `info` = JSON of the last AgentInfo reported) and agent_outputs (as last
+//   declared by the agent in its hello); agent_sessions: one row per connection, kept for 7 days
 // - devices (per house): kind 'wol' (mac + device_agents) or 'output' (agent_id + output_id)
 // - device_shares: a device shared directly with a user (use only)
 // - action_log: every action, with its outcome
@@ -182,6 +183,21 @@ const migrations = [
     created_at        INTEGER NOT NULL,
     updated_at        INTEGER NOT NULL
   );
+  `,
+  // 3: agent diagnostics: last info the agent reported, and its connections (kept for 7 days).
+  `
+  ALTER TABLE agents ADD COLUMN info TEXT;
+  ALTER TABLE agents ADD COLUMN info_at INTEGER;
+
+  CREATE TABLE agent_sessions (
+    id           INTEGER PRIMARY KEY,
+    agent_id     TEXT NOT NULL REFERENCES agents(id) ON DELETE CASCADE,
+    ip           TEXT,
+    connected_at INTEGER NOT NULL,
+    closed_at    INTEGER,
+    close_code   INTEGER
+  );
+  CREATE INDEX agent_sessions_agent ON agent_sessions(agent_id, connected_at);
   `,
 ];
 

@@ -18,6 +18,7 @@ export const fastTiming: Timing = {
   statusCacheMs: 200,
   probeIntervalMs: 40,
   wakeWindowMs: 600,
+  infoMinIntervalMs: 300,
 };
 
 export const NEW_PASSWORD = "correct horse battery";
@@ -117,6 +118,8 @@ export interface FakeAgentOptions {
   outputs?: FakeOutput[];
   /** Answer to each probe (default: down). */
   probe?: (ip: string, port: number | undefined) => boolean;
+  /** Sent as `hello.info` (docs/PROTOCOL.md §5.2); omitted when undefined. */
+  info?: unknown;
   /** Override the reply to a command; return null to stay silent (timeout). */
   reply?: (msg: any) => object | null | undefined;
 }
@@ -142,7 +145,7 @@ export class FakeAgent {
       this.ws = new WebSocket(this.s.wsUrl);
       this.ws.addEventListener("open", () => {
         const outputs = (this.opts.outputs ?? []).map((o) => (o.mode === "switch" ? { ...o, on: this.switches.get(o.id) } : o));
-        this.send({ t: "hello", v: 1, token: this.token, fw: "fake/1", outputs });
+        this.send({ t: "hello", v: 1, token: this.token, fw: "fake/1", outputs, ...(this.opts.info !== undefined ? { info: this.opts.info } : {}) });
       });
       this.ws.addEventListener("message", (e) => {
         const msg = JSON.parse(String(e.data));
@@ -160,6 +163,15 @@ export class FakeAgent {
 
   send(msg: object): void {
     this.ws.send(JSON.stringify(msg));
+  }
+
+  /** An `info` message (docs/PROTOCOL.md §5.2). */
+  sendInfo(info: object): void {
+    this.send({ t: "info", ...info });
+  }
+
+  get isOpen(): boolean {
+    return this.ws.readyState === WebSocket.OPEN;
   }
 
   /** A local (physical) change of a switch. */

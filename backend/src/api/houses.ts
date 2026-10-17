@@ -3,7 +3,8 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import { nameSchema, roleSchema, usernameSchema, type Agent, type AgentOutput, type AgentWithToken, type House, type HouseMember, type Role } from "@awake/shared";
-import { requireHouse } from "../access.ts";
+import { atLeast, requireHouse } from "../access.ts";
+import { agentDetails } from "../agents/details.ts";
 import { loadUserByName } from "../auth/users.ts";
 import { newId, transaction } from "../db.ts";
 import { ApiError } from "../errors.ts";
@@ -16,6 +17,8 @@ interface AgentRow {
   name: string;
   firmware: string | null;
   last_seen: number | null;
+  info: string | null;
+  info_at: number | null;
   created_at: number;
 }
 
@@ -31,7 +34,8 @@ export function houseRoutes(s: Services) {
     return { id: row.id, name: row.name, role: row.role, createdAt: row.created_at };
   };
 
-  const toAgent = (row: AgentRow): Agent => {
+  /** `withDetails`: the viewer is an owner or editor of the house (diagnostics are theirs only). */
+  const toAgent = (row: AgentRow, withDetails: boolean): Agent => {
     const outputs = db
       .prepare(
         `SELECT o.output_id, o.mode, o.has_long, o.is_on, d.id AS device_id FROM agent_outputs o
@@ -47,7 +51,7 @@ export function houseRoutes(s: Services) {
       firmware: row.firmware,
       lastSeen: row.last_seen,
       createdAt: row.created_at,
-      details: null, // TODO(agent-details): filled for owners/editors
+      details: withDetails ? agentDetails(db, hub, row) : null,
       outputs: outputs.map(
         (o): AgentOutput => ({
           id: o.output_id,
@@ -197,9 +201,10 @@ export function houseRoutes(s: Services) {
 
   app.get("/houses/:id/agents", (c) => {
     const houseId = c.req.param("id");
-    requireHouse(db, c.var.auth.user.id, houseId, "member");
+    const role = requireHouse(db, c.var.auth.user.id, houseId, "member");
     const rows = db.prepare("SELECT * FROM agents WHERE house_id = ? ORDER BY name").all(houseId) as unknown as AgentRow[];
-    return c.json(rows.map(toAgent));
+    const withDetails = atLeast(role, "editor");
+    return c.json(rows.map((r) => toAgent(r, withDetails)));
   });
 
   app.post("/houses/:id/agents", async (c) => {
@@ -210,14 +215,14 @@ export function houseRoutes(s: Services) {
     const id = newId();
     db.prepare("INSERT INTO agents (id, house_id, name, token_hash, created_at) VALUES (?, ?, ?, ?, ?)").run(id, houseId, name, hashToken(token), Date.now());
     const row = db.prepare("SELECT * FROM agents WHERE id = ?").get(id) as unknown as AgentRow;
-    return c.json({ agent: toAgent(row), token } satisfies AgentWithToken, 201);
+    return c.json({ agent: toAgent(row, true), token } satisfies AgentWithToken, 201);
   });
 
   app.patch("/agents/:id", async (c) => {
     const row = loadAgent(c.req.param("id"), c.var.auth.user.id, "editor");
     const { name } = await readBody(c, z.object({ name: nameSchema }));
     db.prepare("UPDATE agents SET name = ? WHERE id = ?").run(name, row.id);
-    return c.json(toAgent({ ...row, name }));
+    return c.json(toAgent({ ...row, name }, true));
   });
 
   /** New token: the old one stops working and the agent is disconnected. */
@@ -226,7 +231,7 @@ export function houseRoutes(s: Services) {
     const token = randomToken("awk_");
     db.prepare("UPDATE agents SET token_hash = ? WHERE id = ?").run(hashToken(token), row.id);
     hub.disconnect(row.id);
-    return c.json({ agent: toAgent(row), token } satisfies AgentWithToken);
+    return c.json({ agent: toAgent(row, true), token } satisfies AgentWithToken);
   });
 
   /** Deletes the agent: WoL devices lose it, output devices become unbound. */

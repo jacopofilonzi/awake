@@ -103,7 +103,7 @@ and align this project's copies with it:
   The only secrets the server must read back, login providers' client secrets, are sealed with
   `SECRET_KEY` (AES-256-GCM, `secrets.ts`) and never returned by the API.
 - **Authorization**: anything a user can't see is `404 NOT_FOUND`, never `403` (ids of others' houses and
-  devices are not confirmed). Device config (MAC, IP, agents) and per-agent results only for house
+  devices are not confirmed). Device config (MAC, IP, agents), agent diagnostics (`Agent.details`) and per-agent results only for house
   owners/editors. Rules are in `backend/src/access.ts`; new routes go through `requireHouse` /
   `requireDevice`.
 - **External identities are never matched by email**: only provider + subject. Matching by email would

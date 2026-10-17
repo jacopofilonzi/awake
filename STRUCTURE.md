@@ -37,8 +37,10 @@ backend/src/
 ├── access.ts         roles and device access (owner/editor/member/shared) — authorization rules
 ├── events.ts         EventBus: live events to the users who can see them (SSE)
 ├── agents/
-│   ├── protocol.ts   message types, close codes, hello `outputs` validation (mirrors PROTOCOL.md)
-│   └── hub.ts        AgentHub: auth, presence, wake/probe/press/set with ack timeouts, out_state
+│   ├── protocol.ts   message types, close codes, hello `outputs` and `info` validation (mirrors PROTOCOL.md)
+│   ├── hub.ts        AgentHub: auth, presence, wake/probe/press/set with ack timeouts, out_state,
+│   │                 info (rate-limited), agent_sessions rows (close code the server used, else the agent's / 1006)
+│   └── details.ts    Agent.details for owners/editors: last info, connections, command stats from action_log
 ├── devices/
 │   └── service.ts    DeviceService: status (reach + output), actions, check loop, action log;
 │                     HubListener (persists declared outputs and switch changes)
@@ -59,7 +61,7 @@ backend/src/
 ```
 
 Tests (`backend/test`): end-to-end over HTTP/WebSocket against a real server on a temp dir with fast
-timings; `helpers.ts` has a cookie-keeping `Client` and `FakeAgent` (speaks the protocol).
+timings; `helpers.ts` has a cookie-keeping `Client` and `FakeAgent` (speaks the protocol, can send `info`).
 
 ### API
 
@@ -80,7 +82,9 @@ All under `/api`; full reference in [backend/API.md](backend/API.md). Summary:
 SQLite at `$DATA_DIR/awake.db` (WAL), schema in `backend/src/db.ts`; backups `awake.db.bak-v<n>-<time>`
 are written next to it before each migration. Durable: settings (key → JSON), login providers (client
 secret sealed with `SECRET_KEY`), users, identities, sessions, password links,
-OAuth states (10 min), houses/members, agents, agent outputs (as last declared), devices, shares, action
+OAuth states (10 min), houses/members, agents (with the last info reported), agent outputs (as last declared), agent sessions (one row per
+connection: ip, start, end, close code; closed rows pruned after 7 days, rows left open by a crash closed
+at startup with 1001), devices, shares, action
 log. In memory only: agent connections, reachability results and check loops (lost on restart: actions
 still `waking` are closed as `ok` at startup), rate-limit counters, SSE subscribers.
 

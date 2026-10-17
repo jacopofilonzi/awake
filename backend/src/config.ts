@@ -2,6 +2,7 @@
 
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { INFO_MIN_INTERVAL_MS } from "./agents/protocol.ts";
 import { log } from "./log.ts";
 
 export interface Config {
@@ -47,6 +48,8 @@ export interface Timing {
   /** After a wake: check every probeIntervalMs until online or wakeWindowMs elapsed. */
   probeIntervalMs: number;
   wakeWindowMs: number;
+  /** An `info` message closer than this to the previous one (hello included) is ignored. */
+  infoMinIntervalMs: number;
 }
 
 export const defaultTiming: Timing = {
@@ -59,6 +62,7 @@ export const defaultTiming: Timing = {
   statusCacheMs: 10_000,
   probeIntervalMs: 10_000,
   wakeWindowMs: 5 * 60_000,
+  infoMinIntervalMs: INFO_MIN_INTERVAL_MS,
 };
 
 export class ConfigError extends Error {}

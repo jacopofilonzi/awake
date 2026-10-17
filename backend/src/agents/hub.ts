@@ -1,12 +1,19 @@
 // WebSocket gateway for agents: authentication, presence, commands and their replies.
 // Protocol: docs/PROTOCOL.md. The hub only speaks the protocol; what an event means for devices
 // (state, logs, live updates) is decided by the HubListener (the device service).
+//
+// Diagnostics: every authenticated connection is a row in agent_sessions (ip, start, end, close code;
+// kept for 7 days), and the last `info` an agent reported is kept in agents.info. The close code
+// recorded is the one the server used when it closed the connection itself (replaced, revoked,
+// shutdown...), otherwise the one the agent sent (1006 when the connection dropped without a close
+// frame, which includes the server dropping a silent connection).
 
 import crypto from "node:crypto";
 import { WebSocketServer, type WebSocket } from "ws";
 import { PROTOCOL_VERSION } from "@awake/shared";
 import type { Timing } from "../config.ts";
 import type { Db } from "../db.ts";
+import type { AgentInfo } from "@awake/shared";
 import { log } from "../log.ts";
 import type { RateLimiter } from "../ratelimit.ts";
 import { hashToken } from "../secrets.ts";
@@ -14,6 +21,7 @@ import {
   CloseCode,
   MAX_MESSAGE_BYTES,
   parseMessage,
+  parseInfo,
   parseOutputs,
   type AgentToServer,
   type HelloOutput,
@@ -26,7 +34,12 @@ export interface HubListener {
   agentDisconnected(agentId: string): void;
   /** A switch changed on the agent's side (out_state). */
   outputChanged(agentId: string, outputId: string, on: boolean): void;
+  /** The agent sent a new `info` (not called for the one in hello: agentConnected follows it). */
+  agentInfoChanged(agentId: string): void;
 }
+
+/** Closed connections older than this are pruned from agent_sessions. */
+const SESSION_RETENTION_MS = 7 * 86_400_000;
 
 /** Outcome of a command sent to one agent. */
 export interface CommandResult {
@@ -45,6 +58,13 @@ interface AgentConn {
   agentId: string;
   name: string;
   lastActivity: number;
+  /** Row in agent_sessions, and when the connection was authenticated. */
+  sessionId: number;
+  connectedAt: number;
+  /** Last accepted info (hello always counts), for the minimum interval between info messages. */
+  lastInfoAt: number;
+  /** Close code the server used when it closed this connection itself. */
+  closeCode: number | null;
   pending: Map<string, { expects: Reply["t"]; resolve: (msg: Reply | null) => void }>;
 }
 
@@ -60,6 +80,17 @@ export class AgentHub {
     private timing: Timing,
     private limiter: RateLimiter,
   ) {
+    // Connections still open in the database were cut by a stop of the server that skipped close()
+    // (crash, kill): they ended, at the latest, when the agent was last seen.
+    const stale = db
+      .prepare(
+        `UPDATE agent_sessions SET close_code = ?,
+           closed_at = MAX(connected_at, COALESCE((SELECT last_seen FROM agents a WHERE a.id = agent_sessions.agent_id), ?))
+         WHERE closed_at IS NULL`,
+      )
+      .run(CloseCode.ServerShutdown, Date.now());
+    if (stale.changes) log.info("agent", "closed connections left open by the last stop", { count: Number(stale.changes) });
+
     // Drop silent connections (Wi-Fi lost without a FIN, etc.).
     this.idleTimer = setInterval(
       () => {
@@ -81,12 +112,20 @@ export class AgentHub {
     return this.conns.has(agentId);
   }
 
+  /** Start of the agent's current connection; null while offline. */
+  connectedSince(agentId: string): number | null {
+    return this.conns.get(agentId)?.connectedAt ?? null;
+  }
+
   /** Closes the agent's connection (token regenerated, agent or house deleted). */
   disconnect(agentId: string): void {
-    this.conns.get(agentId)?.ws.close(CloseCode.Revoked, "revoked");
+    const conn = this.conns.get(agentId);
+    if (conn) closeConn(conn, CloseCode.Revoked, "revoked");
   }
 
   close(): void {
+    // Sessions are ended here, while the database is still open: close handlers run after it closes.
+    for (const conn of this.conns.values()) this.endSession(conn, CloseCode.ServerShutdown);
     this.closed = true;
     clearInterval(this.idleTimer);
     for (const ws of this.wss.clients) ws.close(CloseCode.ServerShutdown, "server shutdown");
@@ -132,7 +171,8 @@ export class AgentHub {
       if (this.closed) return; // shutting down: the database may already be closed
       const msg = isBinary ? null : parseMessage(data.toString());
       if (!msg) {
-        ws.close(CloseCode.ProtocolError, "invalid message");
+        if (conn) closeConn(conn, CloseCode.ProtocolError, "invalid message");
+        else ws.close(CloseCode.ProtocolError, "invalid message");
         return;
       }
 
@@ -158,6 +198,9 @@ export class AgentHub {
           }
           break;
         }
+        case "info":
+          this.receiveInfo(conn, msg);
+          break;
         case "out_state":
           if (typeof msg.out === "string" && typeof msg.on === "boolean") {
             this.listener?.outputChanged(conn.agentId, msg.out, msg.on);
@@ -167,14 +210,16 @@ export class AgentHub {
       }
     });
 
-    ws.on("close", () => {
+    ws.on("close", (code) => {
       clearTimeout(helloTimer);
       if (!conn) return;
       for (const pending of conn.pending.values()) pending.resolve(null);
       conn.pending.clear();
+      // Shutting down: the database may already be closed (close() ended the sessions).
+      if (!this.closed) this.endSession(conn, conn.closeCode ?? code);
       if (this.conns.get(conn.agentId) !== conn) return; // replaced by a newer connection
       this.conns.delete(conn.agentId);
-      if (this.closed) return; // database may already be closed
+      if (this.closed) return;
       this.db.prepare("UPDATE agents SET last_seen = ? WHERE id = ?").run(Date.now(), conn.agentId);
       log.info("agent", "disconnected", { name: conn.name, id: conn.agentId });
       this.listener?.agentDisconnected(conn.agentId);
@@ -208,17 +253,62 @@ export class AgentHub {
 
     // One connection per agent: the newest one wins. Its close handler sees it was replaced and
     // does not report a disconnection.
+    const now = Date.now();
     const previous = this.conns.get(row.id);
-    const conn: AgentConn = { ws, agentId: row.id, name: row.name, lastActivity: Date.now(), pending: new Map() };
+    const { lastInsertRowid } = this.db.prepare("INSERT INTO agent_sessions (agent_id, ip, connected_at) VALUES (?, ?, ?)").run(row.id, ip, now);
+    this.db
+      .prepare("DELETE FROM agent_sessions WHERE agent_id = ? AND closed_at IS NOT NULL AND closed_at < ?")
+      .run(row.id, now - SESSION_RETENTION_MS);
+    const conn: AgentConn = {
+      ws,
+      agentId: row.id,
+      name: row.name,
+      lastActivity: now,
+      sessionId: Number(lastInsertRowid),
+      connectedAt: now,
+      lastInfoAt: now,
+      closeCode: null,
+      pending: new Map(),
+    };
     this.conns.set(row.id, conn);
-    previous?.ws.close(CloseCode.Replaced, "replaced by a new connection");
+    if (previous) closeConn(previous, CloseCode.Replaced, "replaced by a new connection");
 
     const fw = typeof msg.fw === "string" ? msg.fw.slice(0, 64) : null;
-    this.db.prepare("UPDATE agents SET firmware = ?, last_seen = ? WHERE id = ?").run(fw, Date.now(), row.id);
+    this.db.prepare("UPDATE agents SET firmware = ?, last_seen = ? WHERE id = ?").run(fw, now, row.id);
+    // A hello without info (older firmware) leaves the last known info in place.
+    const info = parseInfo(msg.info);
+    if (info) this.storeInfo(row.id, info, now);
     send(ws, { t: "welcome", v: PROTOCOL_VERSION, name: row.name, hb: this.timing.heartbeatSec });
     log.info("agent", "connected", { name: row.name, id: row.id, ip, fw: fw ?? undefined, outputs: outputs.length });
     this.listener?.agentConnected(row.id, outputs);
     return conn;
+  }
+
+  /** An `info` message: rate-limited per connection, invalid fields dropped, never fatal. */
+  private receiveInfo(conn: AgentConn, msg: AgentToServer): void {
+    const now = conn.lastActivity;
+    if (now - conn.lastInfoAt < this.timing.infoMinIntervalMs) {
+      log.debug("agent", "info too soon after the previous one, ignored", { id: conn.agentId });
+      return;
+    }
+    const info = parseInfo(msg);
+    if (!info) {
+      log.debug("agent", "info without valid fields, ignored", { id: conn.agentId });
+      return;
+    }
+    conn.lastInfoAt = now;
+    this.storeInfo(conn.agentId, info, now);
+    this.listener?.agentInfoChanged(conn.agentId);
+  }
+
+  private storeInfo(agentId: string, info: AgentInfo, at: number): void {
+    this.db.prepare("UPDATE agents SET info = ?, info_at = ? WHERE id = ?").run(JSON.stringify(info), at, agentId);
+  }
+
+  private endSession(conn: AgentConn, code: number): void {
+    this.db
+      .prepare("UPDATE agent_sessions SET closed_at = ?, close_code = ? WHERE id = ? AND closed_at IS NULL")
+      .run(Date.now(), code, conn.sessionId);
   }
 
   private request(
@@ -256,6 +346,12 @@ function ackResult(reply: Reply | null | "offline" | "timeout"): CommandResult {
   if (reply.ok === true) return { status: "ok", on };
   const err = typeof reply.err === "string" ? reply.err.slice(0, 64) : undefined;
   return { status: "error", err, on };
+}
+
+/** Closes a connection from the server side, remembering the code for its session row. */
+function closeConn(conn: AgentConn, code: number, reason: string): void {
+  conn.closeCode ??= code;
+  conn.ws.close(code, reason);
 }
 
 function send(ws: WebSocket, msg: ServerToAgent): void {

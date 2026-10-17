@@ -126,7 +126,7 @@ uses devices).
 
 | Method | Path | Body | Response | Who |
 |---|---|---|---|---|
-| GET | `/houses/:id/agents` | | `Agent[]` with `online`, `firmware`, `lastSeen`, `outputs` | member |
+| GET | `/houses/:id/agents` | | `Agent[]` with `online`, `firmware`, `lastSeen`, `outputs`, `details` (owners and editors only) | member |
 | POST | `/houses/:id/agents` | `{ name }` | `201 { agent, token }` — **the token is shown only here** | editor |
 | PATCH | `/agents/:id` | `{ name }` | `Agent` | editor |
 | POST | `/agents/:id/token` | | `{ agent, token }` — the old token stops working, the agent is disconnected | editor |
@@ -134,6 +134,20 @@ uses devices).
 
 `outputs` are what the agent declared in its last `hello`: `{ id, mode: "button" | "switch", long, on,
 deviceId }`. The server never configures them.
+
+`details` (diagnostics) is filled only for house owners and editors; members get `null`:
+
+- `info`, `infoAt`: the last `info` the agent reported (docs/PROTOCOL.md §5.2: `platform`, `host`,
+  `ip`, `ssid`, `rssi`, `uptime`, `reset`, `mem`, each optional), kept while the agent is offline;
+  `null` if it never sent one.
+- `connection`: `since` (start of the current connection, `null` while offline), `ip` (address the
+  agent connects from, as seen by the server, for the current or last connection), `connections24h`
+  (connections opened in the last 24 hours, the current one included), `lastClose` (`{ at, code }` of the
+  last connection that ended: the WebSocket close code, the server's own when it closed it — `4002`
+  replaced, `4003` revoked, `1001` server stopped — and `1006` when it dropped without a close frame,
+  including a silent agent dropped by the server). Connections are kept for 7 days.
+- `stats`: `commands24h` and `failed24h` (actions of the log sent to this agent in the last 24 hours,
+  and those whose result for this agent was not `ok`), `lastCommandAt`.
 
 ## Devices
 
@@ -221,7 +235,7 @@ offline). `outcome`: `ok`, `failed`, `waking`, `online` (with `onlineAfterMs`), 
 | `ready` | `{}` | Stream open. |
 | `device` | `{ id, status }` | Replace that device's status. |
 | `devices` | | Refetch `GET /devices`. |
-| `agent` | `{ id, houseId, online }` | Refetch that house's agents. |
+| `agent` | `{ id, houseId, online }` | Refetch that house's agents (sent on connect, disconnect and new `info`). |
 | `houses` | | Refetch `GET /houses`. |
 
 Streams end after 15 minutes (and when the session is revoked); `EventSource` reconnects by itself.

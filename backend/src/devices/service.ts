@@ -194,6 +194,12 @@ export class DeviceService implements HubListener {
     this.emitAgent(agentId, false);
   }
 
+  /** Only the agents list shows info: no device changes (at most one every few minutes per agent). */
+  agentInfoChanged(agentId: string): void {
+    const agent = this.db.prepare("SELECT house_id FROM agents WHERE id = ?").get(agentId) as { house_id: string } | undefined;
+    if (agent) this.bus.toHouse(agent.house_id, { type: "agent", id: agentId, houseId: agent.house_id, online: this.hub.isOnline(agentId) });
+  }
+
   outputChanged(agentId: string, outputId: string, on: boolean): void {
     const row = this.db.prepare("SELECT * FROM agent_outputs WHERE agent_id = ? AND output_id = ?").get(agentId, outputId) as
       | OutputRow
