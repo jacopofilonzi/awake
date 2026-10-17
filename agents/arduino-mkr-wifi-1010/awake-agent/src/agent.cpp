@@ -7,6 +7,7 @@
 #include "log.h"
 #include "net.h"
 #include "status_led.h"
+#include "sysinfo.h"
 #include "version.h"
 #include "watchdog.h"
 #include "ws_client.h"
@@ -20,6 +21,7 @@ constexpr uint32_t WIFI_TIMEOUT_MS = 15000;
 constexpr uint32_t WIFI_RETRY_MS = 5000;
 constexpr uint32_t WIFI_CHECK_MS = 1000;
 constexpr uint32_t DEFAULT_HB_S = 20;
+constexpr uint32_t INFO_INTERVAL_MS = 5UL * 60 * 1000;  // PROTOCOL.md §5.2
 
 enum class State : uint8_t { WAITING, AWAITING_WELCOME, ONLINE, STOPPED };
 
@@ -35,6 +37,7 @@ uint32_t retryAt = 0;       // WAITING: when to connect again
 uint32_t welcomeBy = 0;     // AWAITING_WELCOME: deadline
 uint32_t hbMs = DEFAULT_HB_S * 1000;
 uint32_t nextHbAt = 0;
+uint32_t nextInfoAt = 0;
 uint32_t lastRxAt = 0;
 uint32_t wifiCheckAt = 0;
 uint32_t wifiRetryAt = 0;
@@ -59,13 +62,36 @@ AgentStatus currentStatus() {
 }
 
 bool send(const JsonDocument& doc) {
-  char buf[2048];
+  // Worst case is hello: 32 switches with 32-char ids (~2.3 KB) plus fw and info (~0.3 KB). Static, not
+  // on the stack: send() is never re-entered.
+  static char buf[3072];
   const size_t len = serializeJson(doc, buf, sizeof buf);
   if (len == 0 || len >= sizeof buf) {
     LOGE("agent", "message too large to send");
     return false;
   }
   return ws.sendText(buf, len);
+}
+
+// PROTOCOL.md §5.2, for hello's "info" and the periodic message. No "host": the board has no hostname.
+void fillInfo(JsonObject info) {
+  info["platform"] = "arduino-mkr-wifi-1010";
+  const IPAddress ip = WiFi.localIP();
+  char ipText[16];
+  snprintf(ipText, sizeof ipText, "%u.%u.%u.%u", ip[0], ip[1], ip[2], ip[3]);
+  info["ip"] = ipText;  // copied: ArduinoJson stores char arrays by value
+  info["ssid"] = cfg.wifiSsid;  // the only network the board joins
+  info["rssi"] = (long)WiFi.RSSI();
+  info["uptime"] = (unsigned long)sysinfo::uptimeSeconds();
+  info["reset"] = sysinfo::resetReason();
+  info["mem"] = (unsigned long)sysinfo::freeMemory();
+}
+
+bool sendInfo() {
+  JsonDocument doc;
+  doc["t"] = "info";
+  fillInfo(doc.as<JsonObject>());
+  return send(doc);
 }
 
 void sendAck(const char* id, bool ok, const char* err = nullptr, int on = -1) {
@@ -147,6 +173,7 @@ void connectServer() {
     }
     helloOn[i] = outputs.isOn(i);
   }
+  fillInfo(doc["info"].to<JsonObject>());
   if (!send(doc)) {
     scheduleRetry(1006);
     return;
@@ -170,6 +197,7 @@ void handleWelcome(JsonDocument& doc) {
   state = State::ONLINE;
   backoff.reset();
   nextHbAt = millis() + hbMs;
+  nextInfoAt = millis() + INFO_INTERVAL_MS;  // hello carried the first one
   LOGI("agent", "connected as \"%s\", heartbeat %lu s", doc["name"] | "?", (unsigned long)(hbMs / 1000));
 
   for (uint8_t i = 0; i < outputs.count(); i++) {
@@ -299,7 +327,7 @@ bool ensureWifi() {
 bool Agent::begin(const AgentConfig& config, const OutputConfig* outputList, uint8_t outputCount,
                   const StatusLedConfig* ledList, uint8_t ledCount) {
   cfg = config;
-  LOGI("agent", "%s starting", AWAKE_FIRMWARE);
+  LOGI("agent", "%s starting, last reset: %s", AWAKE_FIRMWARE, sysinfo::resetReason());
   if (!statusLeds::begin(ledList, ledCount, outputList, outputCount)) {
     LOGE("agent", "invalid STATUS_LEDS in config.h: not connecting");
     return false;
@@ -343,6 +371,7 @@ bool Agent::begin(const AgentConfig& config, const OutputConfig* outputList, uin
 }
 
 void Agent::loop() {
+  sysinfo::tick();
   outputs.tick();
   statusLeds::show(currentStatus());
   statusLeds::tick();
@@ -383,6 +412,10 @@ void Agent::loop() {
         JsonDocument hb;
         hb["t"] = "hb";
         if (!send(hb)) return onClosed(ws.closeCode());
+      }
+      if (due(nextInfoAt)) {
+        nextInfoAt = millis() + INFO_INTERVAL_MS;
+        if (!sendInfo()) return onClosed(ws.closeCode());
       }
       return;
     }

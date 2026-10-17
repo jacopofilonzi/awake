@@ -112,6 +112,14 @@ The MKR pins are **3.3 V and can source only a few mA**: never drive a relay coi
 - **Reconnection**: forever, 1 s doubling to 60 s with jitter; at least 5 minutes after an unknown or
   revoked token, 60 s when another agent took over the token; it stops for good on `4004` (protocol
   version not supported: update the firmware). Wi-Fi is re-joined automatically.
+- **Self-description** (`info`, PROTOCOL.md §5.2): in every `hello` and then every 5 minutes while
+  online, the board reports what the web UI shows on the agent: platform `arduino-mkr-wifi-1010`, its
+  LAN IP, the Wi-Fi network (`WIFI_SSID`) and signal (RSSI, dBm), uptime in seconds (correct past
+  millis()' 49-day wrap), free RAM in bytes (between heap and stack) and why it last started, read from
+  the SAMD21's reset cause register: `power` (power-on), `brownout` (supply dropped), `reset` (reset
+  button), `watchdog` (the 16 s watchdog fired: a hang), `software` (a reset requested by firmware, e.g.
+  right after an upload over USB), `unknown`. No hostname: the board has none. The reset reason is also
+  in the first log line.
 - **Watchdog**: a hang of the Wi-Fi/TLS stack reboots the board after 16 s.
 - **Logs** on the USB serial port at 115200 baud (`make monitor`), e.g.
   `12.345 INFO  [agent] connected as "mkr-living-room", heartbeat 20 s`.
@@ -143,6 +151,7 @@ Then flash the agent again (the updater replaces the sketch).
 - [x] `press`: ack at the start, `busy` while pressing, `no long press` when not configured.
 - [x] `set`: ack with the resulting `on`.
 - [x] `out_state` for local button changes, only while connected (changes before `welcome` are sent right after it).
+- [x] `info` in `hello` and every 5 minutes: platform, IP, SSID, RSSI, uptime, reset reason, free RAM.
 - [x] Ignores unknown message types and fields.
 - [x] Reconnects forever with backoff and jitter, honouring the close codes.
 - [x] Never logs the token.
@@ -157,4 +166,5 @@ Then flash the agent again (the updater replaces the sketch).
 | `awake-agent/src/outputs.cpp` | buttons (timed with `millis()`), switches, debounced local buttons |
 | `awake-agent/src/net.cpp` | magic packet, ping / TCP probe |
 | `awake-agent/src/backoff.cpp` | reconnection delays |
+| `awake-agent/src/sysinfo.cpp` | reset cause (`PM->RCAUSE`), uptime past the millis() wrap, free RAM |
 | `awake-agent/src/watchdog.cpp`, `log.cpp`, `version.h` | SAMD21 watchdog, serial logs, firmware version |

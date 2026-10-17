@@ -10,11 +10,13 @@
 
 #include "src/agent.h"
 #include "src/status_led.h"
+#include "src/sysinfo.h"
 #include "src/watchdog.h"
 
 Agent agent;
 
 void setup() {
+  sysinfo::begin();  // first: the reset cause, before anything else runs
   Serial.begin(115200);
   // Leave a moment to open the serial monitor after a reset; the agent runs without one too.
   const uint32_t start = millis();

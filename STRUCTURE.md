@@ -129,13 +129,17 @@ agents/go/
 └── internal/
     ├── protocol/   message structs, close codes, validation (MAC, IPv4, output ids) — mirrors PROTOCOL.md
     ├── config/     TOML + env (AWAKE_SERVER, AWAKE_TOKEN, AWAKE_DRY_RUN) + validation; token redacted
-    ├── client/     connection loop: hello/welcome, one writer goroutine, heartbeat, 3×hb silence,
-    │               backoff (NextDelay) with close-code minimums; commands.go: wake/probe/press/set
+    ├── client/     connection loop: hello (with info)/welcome, one writer goroutine, heartbeat, info
+    │               every 5 min, 3×hb silence, backoff (NextDelay) with close-code minimums;
+    │               commands.go: wake/probe/press/set; its HTTP transport records the LAN IPv4 of the
+    │               connection (reported as info.ip, loopback omitted)
     ├── outputs/    Manager (press timing, busy, switch state, change events) + Driver/Line interface;
     │               sim.go is the only driver (logs actions)
     ├── wol/        magic packet to 255.255.255.255 + directed broadcasts of local subnets; dry run
     ├── probe/      TCP connect (refused = up; Windows needs its own errno file); ICMP via IcmpSendEcho
     │               on Windows (no admin), pro-bing elsewhere (unprivileged, then privileged)
+    ├── sysinfo/    agent info (PROTOCOL.md §5.2): platform GOOS/GOARCH (+ board model from
+    │               /proc/device-tree/model in model_linux.go), hostname, uptime
     └── console/    stdin commands simulating local buttons: toggle/on/off/press/status/help
 ```
 
@@ -156,8 +160,8 @@ agents/arduino-mkr-wifi-1010/awake-agent/
 │                       (StatusLed/RgbStatusLed helpers); copy to config.h (git-ignored)
 ├── sketch.yaml         arduino-cli profile: pinned core and libraries
 └── src/
-    ├── agent.cpp       protocol: Wi-Fi, states (waiting/awaiting welcome/online/stopped), hello, hb,
-    │                   3×hb silence, wake/probe/press/set, out_state
+    ├── agent.cpp       protocol: Wi-Fi, states (waiting/awaiting welcome/online/stopped), hello (with
+    │                   info), hb, 3×hb silence, wake/probe/press/set, out_state, info every 5 min
     ├── ws_client.cpp   minimal WebSocket client (8 KB messages, keeps close codes); ArduinoHttpClient's
     │                   truncates at 128 bytes and drops the close code
     ├── outputs.cpp     buttons timed with millis(), switches, debounced local buttons (INPUT_PULLUP)
@@ -165,5 +169,7 @@ agents/arduino-mkr-wifi-1010/awake-agent/
     ├── net.cpp         magic packet (limited + directed broadcast), ICMP via the NINA module, TCP probe
     │                   (fast failure = refused = up: the module can't tell refused from timeout)
     ├── backoff.cpp     §8 delays with close-code minimums
+    ├── sysinfo.cpp     info (§5.2): reset cause from PM->RCAUSE (read first in setup), uptime past the
+    │                   millis() wrap, free RAM (stack − sbrk(0))
     └── watchdog.cpp, log.cpp, version.h
 ```
