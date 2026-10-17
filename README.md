@@ -49,8 +49,10 @@ make reset-password ACCOUNT=admin                               # from the repos
 ```
 
 Awake speaks plain HTTP on port 8080. **Expose it only through an HTTPS reverse proxy** (Caddy, Traefik,
-nginx…), then set `PUBLIC_URL=https://…` and `TRUST_PROXY=true`. The proxy must also forward the
-WebSocket on `/agent`; with Caddy it is automatic:
+nginx…), then set `PUBLIC_URL=https://…` and `TRUST_PROXY=true`. Behind Cloudflare (in front of your
+proxy) also set `CLIENT_IP_HEADER=CF-Connecting-IP`, so rate limits and the agents' "connects from"
+address see the real client IP (see `.env.example`). The proxy must also forward the WebSocket on
+`/agent`; with Caddy it is automatic:
 
 ```
 awake.example.com {

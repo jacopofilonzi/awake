@@ -40,6 +40,7 @@ export async function startTestServer(overrides: Partial<Config> = {}): Promise<
     publicUrl: "http://localhost",
     dataDir,
     trustProxy: false,
+    clientIpHeader: "x-forwarded-for",
     secretKey: "test-secret-key-test-secret-key-test-secret-key",
     sessionTtlMs: 86_400_000,
     passwordLinkTtlMs: 3_600_000,

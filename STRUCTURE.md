@@ -33,6 +33,7 @@ backend/src/
 ├── db.ts             SQLite schema (append-only migrations), backup before migrating
 ├── secrets.ts        random tokens, SHA-256 token hashes, scrypt passwords, seal/open (AES-GCM, SECRET_KEY)
 ├── ratelimit.ts      in-memory failure counters (per IP, per username, per agent IP)
+├── clientip.ts       client IP: socket, or behind a proxy CLIENT_IP_HEADER (last hop of a list)
 ├── errors.ts         ApiError → `{ error, field?, results? }`
 ├── access.ts         roles and device access (owner/editor/member/shared) — authorization rules
 ├── events.ts         EventBus: live events to the users who can see them (SSE)
@@ -91,7 +92,7 @@ still `waking` are closed as `ok` at startup), rate-limit counters, SSE subscrib
 ### Configuration
 
 Every variable, with defaults and meaning, is in [.env.example](.env.example): `PORT`, `PUBLIC_URL`,
-`TRUST_PROXY`, `DATA_DIR`, `LOG_LEVEL`, `SECRET_KEY`, `SESSION_TTL_DAYS`, `PASSWORD_LINK_TTL_HOURS`,
+`TRUST_PROXY`, `CLIENT_IP_HEADER`, `DATA_DIR`, `LOG_LEVEL`, `SECRET_KEY`, `SESSION_TTL_DAYS`, `PASSWORD_LINK_TTL_HOURS`,
 `WEB_DIR`. Registration and login providers are not env vars: admins set them in the UI (Server page).
 
 ## Web UI (`frontend/src`)

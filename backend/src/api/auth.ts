@@ -13,7 +13,7 @@ import { ApiError } from "../errors.ts";
 import { log } from "../log.ts";
 import { getSettings } from "../settings.ts";
 import { dummyPasswordHash, hashPassword, hashToken, verifyPassword } from "../secrets.ts";
-import { clientIp, readBody, requireUser, type Ctx, type Env, type Services } from "./common.ts";
+import { readBody, requestIp, requireUser, type Ctx, type Env, type Services } from "./common.ts";
 
 const OAUTH_COOKIE = "awake_oauth";
 const OAUTH_STATE_TTL_MS = 10 * 60_000;
@@ -25,7 +25,7 @@ export function authRoutes(s: Services) {
 
   /** Rejects when the IP is over its failure budget. */
   const guard = (c: Ctx, username?: string) => {
-    const ip = clientIp(c, config.trustProxy);
+    const ip = requestIp(c, config);
     if (limiters.ip.isBlocked(ip) || (username && limiters.username.isBlocked(username))) throw new ApiError(429, "RATE_LIMITED");
     return ip;
   };
@@ -236,7 +236,7 @@ export function authRoutes(s: Services) {
       return c.redirect(withParam(flow.next, "linked", provider.id), 302);
     }
 
-    const ip = clientIp(c, config.trustProxy);
+    const ip = requestIp(c, config);
     let user = linkedUserId ? loadUser(db, linkedUserId) : undefined;
     if (!user) {
       // Accounts are never matched by email: an unknown identity is linked from an existing account

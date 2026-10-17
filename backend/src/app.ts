@@ -1,5 +1,6 @@
 // Wiring: database, agent hub, device service, HTTP API and the /agent WebSocket upgrade.
 
+import { clientIp } from "./clientip.ts";
 import type { IncomingMessage, Server } from "node:http";
 import type { AddressInfo } from "node:net";
 import type { Duplex } from "node:stream";
@@ -58,8 +59,7 @@ export async function startServer(config: Config): Promise<RunningServer> {
       socket.destroy();
       return;
     }
-    const hops = config.trustProxy ? String(req.headers["x-forwarded-for"] ?? "").split(",") : [];
-    const ip = hops[hops.length - 1]?.trim() || req.socket.remoteAddress || "unknown";
+    const ip = clientIp(req.headers, req.socket.remoteAddress, config);
     hub.wss.handleUpgrade(req, socket, head, (ws) => hub.handleConnection(ws, ip));
   });
 

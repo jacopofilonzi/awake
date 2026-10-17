@@ -5,6 +5,7 @@ import { ERROR_CODES, type ErrorCode } from "@awake/shared";
 import type { AgentHub } from "../agents/hub.ts";
 import type { OAuthProviders } from "../auth/oauth.ts";
 import { readSession, type SessionInfo } from "../auth/sessions.ts";
+import { clientIp } from "../clientip.ts";
 import type { Config } from "../config.ts";
 import type { Db } from "../db.ts";
 import type { DeviceService } from "../devices/service.ts";
@@ -25,14 +26,8 @@ export interface Services {
 export type Env = { Bindings: HttpBindings; Variables: { auth: SessionInfo } };
 export type Ctx = Context<Env>;
 
-export function clientIp(c: Ctx, trustProxy: boolean): string {
-  if (trustProxy) {
-    // The last hop is the one added by our own reverse proxy; earlier ones are client-controlled.
-    const hops = c.req.header("x-forwarded-for")?.split(",");
-    const last = hops?.[hops.length - 1]?.trim();
-    if (last) return last;
-  }
-  return c.env.incoming.socket.remoteAddress ?? "unknown";
+export function requestIp(c: Ctx, config: Pick<Config, "trustProxy" | "clientIpHeader">): string {
+  return clientIp(c.env.incoming.headers, c.env.incoming.socket.remoteAddress, config);
 }
 
 /**

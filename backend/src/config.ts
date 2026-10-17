@@ -17,6 +17,8 @@ export interface Config {
   publicUrl: string;
   dataDir: string;
   trustProxy: boolean;
+  /** Lowercase name of the header carrying the client IP when trustProxy is set (see clientip.ts). */
+  clientIpHeader: string;
   /**
    * Encrypts the client secrets of login providers stored in the database. Null: providers cannot be
    * saved (the rest of the server works). Login providers and registration are configured by admins
@@ -91,11 +93,20 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
     publicUrl: parsed.origin,
     dataDir: path.resolve(env.DATA_DIR?.trim() || "./data"),
     trustProxy: bool(env.TRUST_PROXY, false),
+    clientIpHeader: clientIpHeader(env),
     secretKey: loadSecretKey(env),
     sessionTtlMs: int(env.SESSION_TTL_DAYS, 30, "SESSION_TTL_DAYS") * 86_400_000,
     passwordLinkTtlMs: int(env.PASSWORD_LINK_TTL_HOURS, 72, "PASSWORD_LINK_TTL_HOURS") * 3_600_000,
     timing: defaultTiming,
   };
+}
+
+function clientIpHeader(env: NodeJS.ProcessEnv): string {
+  const name = env.CLIENT_IP_HEADER?.trim();
+  if (!name) return "x-forwarded-for";
+  if (!/^[A-Za-z0-9-]{1,64}$/.test(name)) throw new ConfigError("CLIENT_IP_HEADER must be a header name, e.g. CF-Connecting-IP");
+  if (!bool(env.TRUST_PROXY, false)) log.warn("config", "CLIENT_IP_HEADER is ignored without TRUST_PROXY=true");
+  return name.toLowerCase();
 }
 
 function loadSecretKey(env: NodeJS.ProcessEnv): string | null {
