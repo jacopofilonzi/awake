@@ -24,7 +24,7 @@ woken over the network.
 | Path | Content |
 |---|---|
 | [`backend/`](backend/) | Server: HTTP API, agent gateway, SQLite. [API reference](backend/API.md) |
-| [`frontend/`](frontend/) | Web UI: installable PWA (Svelte 5, Material 3), Italian and English |
+| [`frontend/`](frontend/) | Web UI: installable PWA (Svelte 5), Italian and English |
 | [`shared/`](shared/) | API types, error codes and validation shared by backend and web UI |
 | [`agents/`](agents/) | Agents: [`go/`](agents/go/) reference agent (PC, Raspberry Pi); boards to come |
 | [`docs/PROTOCOL.md`](docs/PROTOCOL.md) | Agent ↔ server protocol: the contract every agent implements |

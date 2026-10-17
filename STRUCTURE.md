@@ -2,12 +2,12 @@
 
 Awake: remote power control for home devices. A server on a VPS (users, houses, devices, sharing, log)
 talks over an outbound WebSocket to agents in the LAN, which send Wake-on-LAN packets, probe devices and
-drive relay outputs (buttons and switches). Users use a PWA (Svelte 5, Material 3) served by the server.
+drive relay outputs (buttons and switches). Users use a PWA (Svelte 5, "Sabbia" theme) served by the server.
 
 ```text
 repo/
 ├── backend/          Node 24 + TypeScript 7 + Hono 4 — HTTP API, agent gateway (ws), SQLite
-├── frontend/         Svelte 5 + Vite 8 + Tailwind 4 — PWA, Material 3 "ardesia" theme, IT/EN
+├── frontend/         Svelte 5 + Vite 8 + Tailwind 4 — PWA, "Sabbia" theme (glass, Manrope/Fraunces, Lucide), IT/EN
 ├── shared/           TypeScript — API types, error codes, zod validation (backend + UI)
 ├── agents/
 │   ├── README.md     list of agents, how to contribute one
@@ -92,14 +92,15 @@ Every variable, with defaults and meaning, is in [.env.example](.env.example): `
 
 ## Web UI (`frontend/src`)
 
-Svelte 5 (runes) PWA, Material 3 with a low-chroma slate palette ("ardesia"); the admin area switches to a
-muted warm scheme (`.scheme-admin`). TypeScript 6 here (svelte-check does not support 7 yet). In dev Vite
+Svelte 5 (runes) PWA, "Sabbia" theme: warm low-chroma palette on a gradient backdrop, translucent glass
+panels, Manrope + Fraunces, Lucide icons; the admin area only swaps the accent to a muted slate
+(`.scheme-admin`). TypeScript 6 here (svelte-check does not support 7 yet). In dev Vite
 runs on :5173, listening on the LAN (`host: true`: board agents and phones connect to the PC's address), and proxies `/api` and `/agent` to :8080; in production the backend serves `frontend/dist`.
 
 | Path | Responsibility |
 | --- | --- |
 | `main.ts`, `App.svelte` | mount; route guards (anonymous → /login, forced password change, admin only) |
-| `app.css` | Tailwind 4: color tokens as CSS variables (light, dark, admin) mapped by `@theme inline`; `@utility` components (btn-filled/tonal/outlined/text, card, input…) |
+| `app.css` | Tailwind 4: color tokens as CSS variables (light, dark, admin; glass, glow, backdrop) mapped by `@theme inline`; fonts; `@utility` components (glass, card, btn-filled/tonal/outlined/text, input, tabs/tab…) |
 | `lib/api.ts` | the only fetch layer, typed on `@awake/shared`; `ApiFailure` carries the error code |
 | `lib/router.svelte.ts` | history router (path patterns → route names), `link` action |
 | `lib/session.svelte.ts` | public config + current user, boot, logout |
@@ -107,8 +108,9 @@ runs on :5173, listening on the LAN (`host: true`: board agents and phones conne
 | `lib/i18n/` | `en.ts` defines the keys, `it.ts` must match (type-checked); `errors` must cover every `ErrorCode` |
 | `lib/ui.svelte.ts` | snackbar, promise-based confirm dialog, error → text |
 | `lib/format.ts` | device status/kind/icon, relative times, log lines |
-| `lib/icons.ts` | the Material Symbols used, imported as raw SVG (only those are bundled) |
-| `components/` | AppShell (rail / bottom bar, user or admin), TopBar, Dialog (native `<dialog>`, full-screen on phones), DeviceCard, DeviceActions, Switch, Segmented, Menu, StatusPill, LogList… |
+| `lib/icons.ts` | the Lucide icons used (UI names → `lucide-static` SVGs, imported raw: only those are bundled) |
+| `lib/actions.ts` | runs a device action (long-press confirmation, API, status into the store, errors) for tiles and the device page |
+| `components/` | AppShell (glass sidebar with houses, or phone header + dock with an optional page action; user or admin), TopBar, Dialog (native `<dialog>`, bottom sheet on phones), DeviceCard (tile with the glowing power button), DeviceActions, Switch, Segmented, Menu (popover, bottom sheet on phones), StatusPill, LogList… |
 | `dialogs/` | short creation/edit flows: device, house, agent (+ token shown once), member/share (UsernameDialog), new user, password link, login provider (ProviderDialog: presets Google/Microsoft/GitHub/Authentik/Keycloak) |
 | `pages/` | Login, Register, SetPassword (#token), ChangePassword, Home (welcome / redirect), House (+ HouseAgents, HouseMembers), Device, Shared, Activity, Account, admin/Users (flags accounts with no way to log in), admin/Server (registration settings, login providers) |
 

@@ -12,7 +12,7 @@ See "Updating these guidelines" below to align them with the latest version.
 Awake: self-hosted remote power control for home devices — Wake-on-LAN and relay outputs (buttons and
 switches) driven by always-on agents in the LAN that keep an outbound WebSocket to a server on a VPS.
 Stack: server Node.js 24 + TypeScript 7 + Hono 4 + SQLite (`node:sqlite`) + `ws`; reference agent Go 1.27;
-microcontroller agents (C++, contributed) under `agents/<board>/`; web UI Svelte 5 + Vite 8 + Tailwind 4 PWA (Material 3).
+microcontroller agents (C++, contributed) under `agents/<board>/`; web UI Svelte 5 + Vite 8 + Tailwind 4 PWA ("Sabbia" theme, Lucide icons).
 Targets: server on Linux (Docker); agents on Windows, Linux, macOS, Raspberry Pi, microcontrollers.
 
 ## Workflow
@@ -141,8 +141,11 @@ and align this project's copies with it:
 
 ### UI
 
-Design: Material 3 with the low-chroma "ardesia" palette, chosen from the mockups in `mockups/`
-(git-ignored). Keep colors muted, also in dark mode; the admin area differs only by a muted accent.
+Design: "Sabbia", chosen from the mockups in `mockups/` (git-ignored; `g-soft.html`, variant sabbia): warm
+low-chroma palette on a soft gradient backdrop, translucent `glass` panels, Manrope for text and Fraunces
+for headings (`h1`/`h2`, `font-display`), Lucide icons. Keep colors muted, also in dark mode; the admin
+area differs only by its accent (muted slate). Devices that are on "light up" (`--md-glow`).
+On phones, menus and dialogs become bottom sheets and navigation is the floating dock.
 Short creations and edits are dialogs (`components/Dialog.svelte`), not pages.
 
 - Every UI string goes through i18n, with both the English and the Italian key (English is the
