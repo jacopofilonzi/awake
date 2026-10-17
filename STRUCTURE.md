@@ -16,7 +16,8 @@ repo/
 ├── docs/PROTOCOL.md  agent ↔ server protocol v1: the only contract with the agents
 ├── .github/workflows ci.yml (make check + make test on push/PR); release.yml (vX.Y.Z tag: checks,
 │                     tag = server version, Docker image to ghcr.io/jacopofilonzi/awake, amd64 + arm64)
-├── Dockerfile        build stage (npm ci, vite, esbuild) → node:24-alpine: backend bundle + UI in /app/web
+├── Dockerfile        build stage (npm ci, vite, esbuild) → node:24-alpine: backend bundle + UI in /app/web;
+│                     docker-entrypoint.sh makes /data owned by `node` (bind mounts), then runs as `node`
 ├── docker-compose.yml  runs ghcr.io/jacopofilonzi/awake:${AWAKE_VERSION:-latest} (the image CI publishes on tags)
 ├── .env.example      every supported env var, documented; `.env` is git-ignored
 └── Makefile          dev commands (run `make help`)

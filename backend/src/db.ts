@@ -211,7 +211,17 @@ export type Db = DatabaseSync;
 export function openDb(dataDir: string): Db {
   fs.mkdirSync(dataDir, { recursive: true });
   const file = path.join(dataDir, "awake.db");
-  const db = new DatabaseSync(file);
+  let db: DatabaseSync;
+  try {
+    db = new DatabaseSync(file);
+  } catch (err) {
+    // Usually a data directory this process may not write to (e.g. a bind mount created by Docker as root).
+    const uid = process.getuid?.();
+    throw new Error(
+      `cannot open the database ${file}: ${(err as Error).message}. Check that ${dataDir} exists and is writable` +
+        (uid === undefined ? "" : ` by uid ${uid} (e.g. chown -R ${uid}:${uid} on the host directory)`),
+    );
+  }
   db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
 
   const { user_version: current } = db.prepare("PRAGMA user_version").get() as { user_version: number };
