@@ -51,7 +51,9 @@ function parse(): Route {
 
 export const router = $state<{ route: Route }>({ route: parse() });
 
-addEventListener("popstate", () => (router.route = parse()));
+addEventListener("popstate", () => {
+  router.route = parse();
+});
 
 export function navigate(path: string, { replace = false } = {}): void {
   if (path === location.pathname + location.search) return;
