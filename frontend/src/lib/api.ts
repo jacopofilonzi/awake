@@ -3,6 +3,7 @@
 
 import type {
   ActionResponse,
+  AdminProvider,
   AdminUser,
   AdminUserCreated,
   Agent,
@@ -19,9 +20,13 @@ import type {
   Me,
   PasswordLink,
   PasswordTokenInfo,
+  ProviderDeleted,
+  ProviderInput,
+  ProviderType,
   PublicConfig,
   RegisterResponse,
   Role,
+  ServerSettings,
   StatusMap,
 } from "@awake/shared";
 
@@ -137,5 +142,13 @@ export const api = {
       patch<AdminUser>(`/admin/users/${id(userId)}`, body),
     passwordLink: (userId: string) => post<PasswordLink>(`/admin/users/${id(userId)}/password-link`),
     removeUser: (userId: string) => del(`/admin/users/${id(userId)}`),
+    settings: () => get<ServerSettings>("/admin/settings"),
+    saveSettings: (body: { registrationEnabled: boolean; autoApprove: boolean }) => put<ServerSettings>("/admin/settings", body),
+    providers: () => get<AdminProvider[]>("/admin/providers"),
+    createProvider: (body: ProviderInput) => post<AdminProvider>("/admin/providers", body),
+    updateProvider: (providerId: string, body: ProviderInput) => put<AdminProvider>(`/admin/providers/${id(providerId)}`, body),
+    removeProvider: (providerId: string) => request<ProviderDeleted>("DELETE", `/admin/providers/${id(providerId)}`),
+    /** OIDC discovery check before saving; resolves when the issuer answers. */
+    testProvider: (type: ProviderType, issuer: string | null) => post<null>("/admin/providers/test", { type, issuer }),
   },
 };

@@ -29,6 +29,7 @@
   load();
 
   const pending = $derived(users?.filter((u) => u.status === "pending").length ?? 0);
+  const noLogin = $derived(users?.filter((u) => u.status === "active" && !u.canLogIn).length ?? 0);
   const tone: Record<AdminUser["status"], Tone> = { active: "ok", pending: "warn", disabled: "off" };
 
   async function update(u: AdminUser, body: Parameters<typeof api.admin.updateUser>[1], message: string) {
@@ -76,7 +77,10 @@
 
     <div class="flex items-baseline justify-between">
       <h2 class="text-[1.375rem]">{t("nav.users")}</h2>
-      {#if pending}<span class="text-sm text-warn">{t("admin.users.pendingCount", { n: pending })}</span>{/if}
+      <span class="flex gap-3 text-sm">
+        {#if noLogin}<span class="text-error">{t("admin.users.noLoginCount", { n: noLogin })}</span>{/if}
+        {#if pending}<span class="text-warn">{t("admin.users.pendingCount", { n: pending })}</span>{/if}
+      </span>
     </div>
 
     <div class="card-outlined">
@@ -99,7 +103,13 @@
                   · {t("admin.users.lastLogin", { when: relativeTime(u.lastLoginAt) })}
                 </div>
               </div>
-              <StatusPill tone={tone[u.status]} label={t(`admin.users.status.${u.status}`)} />
+              {#if u.status === "active" && !u.canLogIn}
+                <!-- No password and no enabled provider (e.g. its provider was deleted): needs a password link. -->
+                <StatusPill tone="error" label={t("admin.users.noLogin")} />
+                <button class="btn-tonal h-9" onclick={() => passwordLink(u)}><Icon name="link" size={18} />{t("admin.users.passwordLink")}</button>
+              {:else}
+                <StatusPill tone={tone[u.status]} label={t(`admin.users.status.${u.status}`)} />
+              {/if}
               {#if u.status === "pending"}
                 <button class="btn-filled h-9" onclick={() => update(u, { status: "active" }, t("admin.users.approved", { name: u.username }))}>{t("admin.users.approve")}</button>
               {/if}
