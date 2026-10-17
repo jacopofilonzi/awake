@@ -1,6 +1,8 @@
+# Runs the published image (built by .github/workflows/release.yml on every vX.Y.Z tag).
+# AWAKE_VERSION in .env pins a version (e.g. 0.2.0 or 0.2); default: latest.
 services:
   awake:
-    build: .
+    image: ghcr.io/jacopofilonzi/awake:${AWAKE_VERSION:-latest}
     restart: unless-stopped
     env_file:
       - path: .env

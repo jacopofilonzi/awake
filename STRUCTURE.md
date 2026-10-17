@@ -17,7 +17,7 @@ repo/
 ├── .github/workflows ci.yml (make check + make test on push/PR); release.yml (vX.Y.Z tag: checks,
 │                     tag = server version, Docker image to ghcr.io/jacopofilonzi/awake, amd64 + arm64)
 ├── Dockerfile        build stage (npm ci, vite, esbuild) → node:24-alpine: backend bundle + UI in /app/web
-├── docker-compose.yml
+├── docker-compose.yml  runs ghcr.io/jacopofilonzi/awake:${AWAKE_VERSION:-latest} (the image CI publishes on tags)
 ├── .env.example      every supported env var, documented; `.env` is git-ignored
 └── Makefile          dev commands (run `make help`)
 ```
@@ -94,7 +94,7 @@ still `waking` are closed as `ok` at startup), rate-limit counters, SSE subscrib
 ### Configuration
 
 Every variable, with defaults and meaning, is in [.env.example](.env.example): `PORT`, `PUBLIC_URL`,
-`TRUST_PROXY`, `CLIENT_IP_HEADER`, `DATA_DIR`, `LOG_LEVEL`, `SECRET_KEY`, `SESSION_TTL_DAYS`, `PASSWORD_LINK_TTL_HOURS`,
+`AWAKE_VERSION` (compose only), `TRUST_PROXY`, `CLIENT_IP_HEADER`, `DATA_DIR`, `LOG_LEVEL`, `SECRET_KEY`, `SESSION_TTL_DAYS`, `PASSWORD_LINK_TTL_HOURS`,
 `WEB_DIR`. Registration and login providers are not env vars: admins set them in the UI (Server page).
 
 ## Web UI (`frontend/src`)

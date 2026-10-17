@@ -36,13 +36,14 @@ as an app (installing requires HTTPS).
 
 ```bash
 cp .env.example .env    # set PUBLIC_URL, TRUST_PROXY=true, SECRET_KEY
-make up                 # docker compose up -d --build
+make up                 # pulls ghcr.io/jacopofilonzi/awake and starts it (docker compose)
 make logs               # the first start prints the admin password
 ```
 
-Or use the published image instead of building it: in `docker-compose.yml` replace `build: .` with
-`image: ghcr.io/jacopofilonzi/awake:latest` (or a version, e.g. `:0.1`), then `docker compose up -d`.
-Images are built for `linux/amd64` and `linux/arm64`.
+`docker-compose.yml` runs the image published by CI for every release (`linux/amd64` and `linux/arm64`);
+it needs only `docker-compose.yml` and `.env` on the server, not the source. Set `AWAKE_VERSION` in `.env`
+to pin a version (`0.2.0`, or `0.2` for its fixes); the default is `latest`. To build the image from the
+source instead: `docker build -t awake .`.
 
 On the first start Awake creates the user **`admin`** with a random password, printed once in the logs;
 it must be changed at the first login. Lost it?

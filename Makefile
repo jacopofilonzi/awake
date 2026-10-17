@@ -23,7 +23,7 @@ help:
 	@echo "  make reset-password ACCOUNT=admin   print a new temporary password for a user"
 	@echo ""
 	@echo "Server with Docker"
-	@echo "  make up / down / logs"
+	@echo "  make up / down / logs     up = pull the published image and start it"
 	@echo ""
 	@echo "Go agent ($(AGENT_DIR), configured by $(AGENT_DIR)/$(AGENT_CONFIG))"
 	@echo "  make agent           run it (simulated outputs, console on stdin)"
@@ -76,7 +76,8 @@ reset-password: node_modules
 # ---------- Docker ----------
 
 up:
-	docker compose up -d --build
+	docker compose pull
+	docker compose up -d
 
 down:
 	docker compose down
