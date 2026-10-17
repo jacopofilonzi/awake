@@ -35,7 +35,7 @@ as an app (installing requires HTTPS).
 ## Run the server
 
 ```bash
-cp .env.example .env    # set PUBLIC_URL, TRUST_PROXY=true, login providers…
+cp .env.example .env    # set PUBLIC_URL, TRUST_PROXY=true, SECRET_KEY
 make up                 # docker compose up -d --build
 make logs               # the first start prints the admin password
 ```
@@ -62,13 +62,15 @@ awake.example.com {
 
 - Admins create users with a password (to be changed at first login) or with a one-time set-password
   link to send them.
-- `REGISTRATION_ENABLED=true` lets people sign up by themselves; with `REGISTRATION_AUTO_APPROVE=false`
-  their account waits for an admin's approval.
-- **Login providers**: Google, GitHub and any OpenID Connect provider (Authentik, Keycloak, Authelia…).
-  Configure them with `OAUTH_PROVIDERS` and `OAUTH_<ID>_*` (see [.env.example](.env.example)); the
-  redirect URI to register is `<PUBLIC_URL>/api/auth/oauth/<id>/callback`. Users link a provider to
-  their account from their settings; an unknown provider account creates a new user only when
-  registration is enabled.
+- **Administration → Server** decides whether people can sign up by themselves and whether new
+  accounts are approved automatically or wait for an admin.
+- **Login providers**: Google, GitHub (also Enterprise) and any OpenID Connect provider (Authentik,
+  Keycloak, Microsoft Entra ID…), as many as you like, also several of the same kind. Admins add them in
+  **Administration → Server**, which shows the redirect URI to register at the provider
+  (`<PUBLIC_URL>/api/auth/oauth/<id>/callback`). Set `SECRET_KEY` in `.env` first: client secrets are
+  stored encrypted with it. Users link a provider to their account from their settings; a provider
+  creates new accounts only when "Allow new accounts" is on for it. Deleting a provider leaves accounts
+  without a password unable to log in: **Users** marks them, and a password link gives them access again.
 
 Every variable is documented in [.env.example](.env.example).
 

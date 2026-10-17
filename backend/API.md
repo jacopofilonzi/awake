@@ -69,8 +69,10 @@ The callback redirects to `PUBLIC_URL + next` (a same-site path), with `?error=<
 
 - An identity is matched only by provider + subject, **never by email**: a provider account becomes a
   login for an existing user only when that user links it from their account.
-- An unknown identity creates a new account when `REGISTRATION_ENABLED=true` (active or pending as per
-  `REGISTRATION_AUTO_APPROVE`), otherwise `OAUTH_NOT_LINKED`.
+- An unknown identity creates a new account only when the provider has `allowSignup` (active or pending
+  as per the `autoApprove` setting), otherwise `OAUTH_NOT_LINKED`. Providers are managed under
+  `/admin/providers`; a disabled or deleted one gives `PROVIDER_NOT_FOUND`, and `SECRET_KEY_MISSING`
+  when the server has no `SECRET_KEY`.
 
 ## Admin (`/admin`, admins only)
 
@@ -85,7 +87,22 @@ Admins manage accounts, not data: they do not see other users' houses or devices
 | DELETE | `/admin/users/:id` | | 204. Every house they own (also co-owned ones) is deleted with everything in it |
 
 `LAST_ADMIN`: the last active admin cannot be demoted, disabled or deleted. `CANNOT_TARGET_SELF`:
-admins cannot demote, disable or delete themselves.
+admins cannot demote, disable or delete themselves. `AdminUser.canLogIn` is false for an account with no
+password and no enabled provider (e.g. its provider was deleted): a password link is its way back in.
+
+### Server settings and login providers
+
+| Method | Path | Body | Response |
+|---|---|---|---|
+| GET | `/admin/settings` | | `ServerSettings` `{ registrationEnabled, autoApprove, secretKeyConfigured }` |
+| PUT | `/admin/settings` | `{ registrationEnabled, autoApprove }` | `ServerSettings`. `autoApprove` also applies to accounts created by a provider |
+| GET | `/admin/providers` | | `AdminProvider[]` `{ id, label, type, issuer, clientId, scopes, enabled, allowSignup, redirectUri, linkedUsers, createdAt }` — never the secret |
+| POST | `/admin/providers/test` | `{ type, issuer }` | 204 when OIDC discovery at `issuer` works, `PROVIDER_UNREACHABLE` otherwise |
+| POST | `/admin/providers` | `ProviderInput` `{ id, label, type: "oidc" \| "github", issuer, clientId, clientSecret, scopes, enabled?, allowSignup? }` | `201 AdminProvider`. `PROVIDER_ID_TAKEN`, `SECRET_KEY_MISSING`; `issuer` required for `oidc`, optional GitHub Enterprise URL for `github` |
+| PUT | `/admin/providers/:id` | `ProviderInput` without `id` | `AdminProvider`. An empty `clientSecret` keeps the stored one |
+| DELETE | `/admin/providers/:id` | | `{ withoutLogin: string[] }`: its identities are removed; usernames listed are left with no way to log in |
+
+Client secrets are stored sealed with AES-256-GCM under a key derived from `SECRET_KEY`.
 
 ## Houses
 

@@ -26,10 +26,11 @@ backend/src/
 ├── index.ts          entry: config, start, bootstrap-admin banner; `reset-password <user>` CLI
 ├── app.ts            wiring: db, hub, device service, event bus, Hono app, SPA, /agent WebSocket upgrade
 ├── static.ts         serves the built UI (WEB_DIR) with SPA fallback; hashed assets cached forever
-├── config.ts         env → Config (PUBLIC_URL, registration, OAUTH_* providers, timings)
+├── config.ts         env → Config (PUBLIC_URL, SECRET_KEY, timings)
+├── settings.ts       server settings kept in the DB (registration enabled, auto approve)
 ├── log.ts            leveled one-line logger
 ├── db.ts             SQLite schema (append-only migrations), backup before migrating
-├── secrets.ts        random tokens, SHA-256 token hashes, scrypt passwords
+├── secrets.ts        random tokens, SHA-256 token hashes, scrypt passwords, seal/open (AES-GCM, SECRET_KEY)
 ├── ratelimit.ts      in-memory failure counters (per IP, per username, per agent IP)
 ├── errors.ts         ApiError → `{ error, field?, results? }`
 ├── access.ts         roles and device access (owner/editor/member/shared) — authorization rules
@@ -43,12 +44,14 @@ backend/src/
 ├── auth/
 │   ├── users.ts      user rows/views, creation, set-password links, bootstrap admin, CLI reset
 │   ├── sessions.ts   cookie sessions (hashed, sliding), revocation, purge of expired rows
-│   └── oauth.ts      OIDC discovery + GitHub, PKCE/state/nonce, identity from claims
+│   └── oauth.ts      OAuthProviders: providers from the DB (secrets opened on use, cached
+│                     discovery), OIDC + GitHub/GHE, PKCE/state/nonce, identity from claims
 └── api/
     ├── index.ts      /api router: Origin check, body limit, /health, /config, error handler
     ├── common.ts     Services, Env, readBody (zod → error codes), requireUser/requireAdmin, sameOrigin
     ├── auth.ts       /auth: login, register, logout, me, password, password links, OAuth start/callback
-    ├── admin.ts      /admin/users
+    ├── admin.ts      /admin/users (mounts server.ts)
+    ├── server.ts     /admin/settings, /admin/providers (CRUD, test, delete → accounts left without login)
     ├── houses.ts     /houses, members, /houses/:id/agents, /agents/:id
     ├── devices.ts    /devices, /houses/:id/devices, actions, check/status, shares, /shared/:id
     └── activity.ts   /log, /events (SSE)
@@ -65,6 +68,7 @@ All under `/api`; full reference in [backend/API.md](backend/API.md). Summary:
 - `/auth/*`: login/register/logout/me/password, set-password links, `oauth/:provider/start|callback`,
   `DELETE identities/:provider`
 - `/admin/users*`: list, create (password or link), patch (rename, admin, approve/disable), link, delete
+- `/admin/settings` (registration), `/admin/providers*` (login providers: list, test, create, update, delete)
 - `/houses*`: houses, members, agents of a house, devices creation; `/agents/:id*`
 - `/devices*`: list, `check`, `status`, `:id/action`, PUT/DELETE, `:id/shares*`; `/shared/:id`
 - `/log`, `/events` (SSE)
@@ -73,7 +77,8 @@ All under `/api`; full reference in [backend/API.md](backend/API.md). Summary:
 ### Data and state
 
 SQLite at `$DATA_DIR/awake.db` (WAL), schema in `backend/src/db.ts`; backups `awake.db.bak-v<n>-<time>`
-are written next to it before each migration. Durable: users, identities, sessions, password links,
+are written next to it before each migration. Durable: settings (key → JSON), login providers (client
+secret sealed with `SECRET_KEY`), users, identities, sessions, password links,
 OAuth states (10 min), houses/members, agents, agent outputs (as last declared), devices, shares, action
 log. In memory only: agent connections, reachability results and check loops (lost on restart: actions
 still `waking` are closed as `ok` at startup), rate-limit counters, SSE subscribers.
@@ -81,8 +86,8 @@ still `waking` are closed as `ok` at startup), rate-limit counters, SSE subscrib
 ### Configuration
 
 Every variable, with defaults and meaning, is in [.env.example](.env.example): `PORT`, `PUBLIC_URL`,
-`TRUST_PROXY`, `DATA_DIR`, `LOG_LEVEL`, `REGISTRATION_ENABLED`, `REGISTRATION_AUTO_APPROVE`,
-`SESSION_TTL_DAYS`, `PASSWORD_LINK_TTL_HOURS`, `WEB_DIR`, `OAUTH_PROVIDERS` + `OAUTH_<ID>_{TYPE,ISSUER,CLIENT_ID,CLIENT_SECRET,LABEL,SCOPES}`.
+`TRUST_PROXY`, `DATA_DIR`, `LOG_LEVEL`, `SECRET_KEY`, `SESSION_TTL_DAYS`, `PASSWORD_LINK_TTL_HOURS`,
+`WEB_DIR`. Registration and login providers are not env vars: admins set them in the UI (Server page).
 
 ## Web UI (`frontend/src`)
 
@@ -103,8 +108,8 @@ runs on :5173 and proxies `/api` and `/agent` to :8080; in production the backen
 | `lib/format.ts` | device status/kind/icon, relative times, log lines |
 | `lib/icons.ts` | the Material Symbols used, imported as raw SVG (only those are bundled) |
 | `components/` | AppShell (rail / bottom bar, user or admin), TopBar, Dialog (native `<dialog>`, full-screen on phones), DeviceCard, DeviceActions, Switch, Segmented, Menu, StatusPill, LogList… |
-| `dialogs/` | short creation/edit flows: device, house, agent (+ token shown once), member/share (UsernameDialog), new user, password link |
-| `pages/` | Login, Register, SetPassword (#token), ChangePassword, Home (welcome / redirect), House (+ HouseAgents, HouseMembers), Device, Shared, Activity, Account, admin/Users, admin/Server |
+| `dialogs/` | short creation/edit flows: device, house, agent (+ token shown once), member/share (UsernameDialog), new user, password link, login provider (ProviderDialog: presets Google/Microsoft/GitHub/Authentik/Keycloak) |
+| `pages/` | Login, Register, SetPassword (#token), ChangePassword, Home (welcome / redirect), House (+ HouseAgents, HouseMembers), Device, Shared, Activity, Account, admin/Users (flags accounts with no way to log in), admin/Server (registration settings, login providers) |
 
 `mockups/` (git-ignored) holds the HTML mockups the design was chosen from.
 

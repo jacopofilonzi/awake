@@ -99,6 +99,8 @@ and align this project's copies with it:
   press available, switch state). Pins, wiring and press durations stay in the agent's config.
 - **Secrets are stored only as hashes** (sessions, agent tokens, password links, OAuth state: SHA-256;
   passwords: scrypt) and are never logged. A token is shown once, in the response that creates it.
+  The only secrets the server must read back, login providers' client secrets, are sealed with
+  `SECRET_KEY` (AES-256-GCM, `secrets.ts`) and never returned by the API.
 - **Authorization**: anything a user can't see is `404 NOT_FOUND`, never `403` (ids of others' houses and
   devices are not confirmed). Device config (MAC, IP, agents) and per-agent results only for house
   owners/editors. Rules are in `backend/src/access.ts`; new routes go through `requireHouse` /
@@ -201,9 +203,10 @@ the config, validate its options at startup, test it without hardware.
 
 ## Adding a login provider preset
 
-Generic OIDC providers need no code (`OAUTH_<ID>_ISSUER`). A preset (only client id/secret needed) is an
-entry in `PRESETS` in `backend/src/config.ts`; a provider that is not OIDC needs its own branch in
-`backend/src/auth/oauth.ts` like GitHub. Document it in `.env.example`.
+Providers are configured by admins in the UI and stored in the DB; any OIDC issuer needs no code. A
+preset only prefills the form: an entry in `PRESETS` in `frontend/src/dialogs/ProviderDialog.svelte`
+(plus its `<option>`). A provider that is not OIDC needs a new `ProviderType` (shared + DB `CHECK`, via a
+migration) and its own branch in `backend/src/auth/oauth.ts` like GitHub.
 
 ## Known pitfalls
 
