@@ -7,7 +7,12 @@
 
 namespace {
 
-WiFiUDP udp;  // send-only: never bound to a local port, so the agent listens on nothing
+// Send-only. The Wi-Fi module rejects broadcasts on a UDP socket opened implicitly by beginPacket(), so
+// it is opened with begin() on a high local port: nothing is ever read from it, and no Wake-on-LAN
+// broadcast (port 7/9) lands there.
+WiFiUDP udp;
+constexpr uint16_t UDP_LOCAL_PORT = 40009;
+bool udpOpen = false;
 
 int hexDigit(char c) {
   if (c >= '0' && c <= '9') return c - '0';
@@ -17,6 +22,13 @@ int hexDigit(char c) {
 }
 
 bool sendTo(const IPAddress& ip, uint16_t port, const uint8_t* packet, size_t len) {
+  if (!udpOpen) {
+    udpOpen = udp.begin(UDP_LOCAL_PORT);
+    if (!udpOpen) {
+      LOGW("wol", "no UDP socket available");
+      return false;
+    }
+  }
   if (!udp.beginPacket(ip, port)) return false;
   udp.write(packet, len);
   return udp.endPacket();
@@ -57,6 +69,7 @@ ProbeResult probe(const IPAddress& ip, uint16_t port, uint32_t timeoutMs) {
   const uint32_t start = millis();
   if (port == 0) {
     const int rtt = WiFi.ping(ip);
+    LOGI("probe", "ping %u.%u.%u.%u: %d (%lu ms)", ip[0], ip[1], ip[2], ip[3], rtt, (unsigned long)(millis() - start));
     if (rtt >= 0) return {(uint32_t)rtt <= timeoutMs, rtt, nullptr};
     if (rtt == WL_PING_TIMEOUT || rtt == WL_PING_DEST_UNREACHABLE) return {false, -1, nullptr};
     return {false, -1, "probe failed"};
@@ -70,6 +83,7 @@ ProbeResult probe(const IPAddress& ip, uint16_t port, uint32_t timeoutMs) {
   const bool connected = client.connect(ip, port);
   const uint32_t elapsed = millis() - start;
   client.stop();
+  LOGI("probe", "tcp %u.%u.%u.%u:%u: %s after %lu ms", ip[0], ip[1], ip[2], ip[3], port, connected ? "connected" : "failed", (unsigned long)elapsed);
   if (connected) return {true, (int32_t)elapsed, nullptr};
   const uint32_t refusedWithin = timeoutMs / 2 < 500 ? timeoutMs / 2 : 500;
   return {elapsed < refusedWithin, elapsed < refusedWithin ? (int32_t)elapsed : -1, nullptr};

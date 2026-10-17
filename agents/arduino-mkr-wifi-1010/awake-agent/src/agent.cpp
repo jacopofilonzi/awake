@@ -39,6 +39,9 @@ uint32_t wifiCheckAt = 0;
 uint32_t wifiRetryAt = 0;
 bool wifiUp = false;
 bool helloOn[MAX_OUTPUTS];  // switch states sent in the last hello
+// hello "fw": our version plus the Wi-Fi module's firmware, which decides what the board can do (TLS
+// roots, UDP broadcast) and is otherwise only visible in the boot log.
+char firmware[65];
 
 bool due(uint32_t at) { return (int32_t)(millis() - at) >= 0; }
 
@@ -116,7 +119,7 @@ void connectServer() {
   doc["t"] = "hello";
   doc["v"] = PROTOCOL_VERSION;
   doc["token"] = cfg.token;
-  doc["fw"] = AWAKE_FIRMWARE;
+  doc["fw"] = firmware;
   JsonArray list = doc["outputs"].to<JsonArray>();
   for (uint8_t i = 0; i < outputs.count(); i++) {
     const OutputConfig& c = outputs.config(i);
@@ -294,6 +297,7 @@ bool Agent::begin(const AgentConfig& config, const OutputConfig* outputList, uin
     return false;
   }
   const String fw = WiFi.firmwareVersion();
+  snprintf(firmware, sizeof firmware, "%s nina/%s", AWAKE_FIRMWARE, fw.c_str());
   if (fw < WIFI_FIRMWARE_LATEST_VERSION) {
     LOGW("wifi", "Wi-Fi module firmware %s, latest %s: update it (see README)", fw.c_str(), WIFI_FIRMWARE_LATEST_VERSION);
   }
