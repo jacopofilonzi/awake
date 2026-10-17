@@ -44,7 +44,7 @@
   <ul>
     {#each entries as e (e.id)}
       {@const line = logLine(e)}
-      <li class="flex items-center gap-3 px-4 py-3 not-last:border-b not-last:border-outline-variant">
+      <li class="flex items-center gap-3 px-4 py-3 not-last:border-b not-last:border-on-surface/8">
         <span class="w-24 shrink-0 font-mono text-xs text-muted">{clock(e.at)}</span>
         <div class="min-w-0 flex-1 text-sm">
           {#if e.deviceId && !deviceId}<a class="font-medium hover:underline" href="/devices/{e.deviceId}" use:link>{e.deviceName}</a>{:else if !deviceId}<span class="font-medium">{e.deviceName}</span>{/if}

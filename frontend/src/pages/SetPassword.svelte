@@ -45,13 +45,13 @@
 
 <AuthLayout title={t("auth.setPassword.title")} subtitle={username ? t("auth.setPassword.for", { username }) : ""}>
   {#if invalid}
-    <p class="rounded-lg bg-error-container px-4 py-3 text-sm text-error">{t("errors.INVALID_TOKEN")}</p>
+    <p class="rounded-xl bg-error-container px-4 py-3 text-sm text-error">{t("errors.INVALID_TOKEN")}</p>
     <a class="btn-text mt-4 w-full" href="/login" use:link>{t("auth.backToLogin")}</a>
   {:else if username}
     <form class="space-y-4" onsubmit={submit}>
       <TextField label={t("auth.newPassword")} type="password" bind:value={password} hint={t("auth.passwordHint")} autocomplete="new-password" required />
       <TextField label={t("auth.confirmPassword")} type="password" bind:value={confirm} autocomplete="new-password" required />
-      {#if error}<p class="rounded-lg bg-error-container px-3 py-2 text-sm text-error" role="alert">{error}</p>{/if}
+      {#if error}<p class="rounded-xl bg-error-container px-3 py-2 text-sm text-error" role="alert">{error}</p>{/if}
       <button class="btn-filled w-full" disabled={busy}>{t("auth.setPassword.submit")}</button>
     </form>
   {/if}

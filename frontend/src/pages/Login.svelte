@@ -36,7 +36,7 @@
   <form class="space-y-4" onsubmit={submit}>
     <TextField label={t("auth.username")} bind:value={username} autocomplete="username" autocapitalize="none" required />
     <TextField label={t("auth.password")} type="password" bind:value={password} autocomplete="current-password" required />
-    {#if error}<p class="rounded-lg bg-error-container px-3 py-2 text-sm text-error" role="alert">{error}</p>{/if}
+    {#if error}<p class="rounded-xl bg-error-container px-3 py-2 text-sm text-error" role="alert">{error}</p>{/if}
     <button class="btn-filled w-full" disabled={busy}>{t("auth.login.submit")}</button>
   </form>
 

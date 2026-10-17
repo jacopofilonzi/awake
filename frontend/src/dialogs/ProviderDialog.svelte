@@ -219,7 +219,7 @@
 
     <div>
       <span class="field-label">{t("admin.providers.redirectUri")}</span>
-      <div class="flex items-center gap-2 rounded-lg bg-surface px-3 py-2">
+      <div class="flex items-center gap-2 rounded-xl bg-on-surface/6 px-3 py-2">
         <code class="flex-1 font-mono text-xs break-all">{redirectUri}</code>
         <button type="button" class="icon-btn" onclick={() => copy(redirectUri)} aria-label={t("common.copy")}><Icon name="copy" size={20} /></button>
       </div>
@@ -237,11 +237,11 @@
       </div>
     </div>
 
-    {#if formError}<p class="rounded-lg bg-error-container px-3 py-2 text-sm text-error" role="alert">{formError}</p>{/if}
+    {#if formError}<p class="rounded-xl bg-error-container px-3 py-2 text-sm text-error" role="alert">{formError}</p>{/if}
     <button type="submit" hidden aria-label={t("common.save")}></button>
   </form>
   {#snippet actions()}
     <button class="btn-text" onclick={onclose}>{t("common.cancel")}</button>
-    <button class="btn-text" disabled={busy} onclick={save}>{provider ? t("common.save") : t("common.add")}</button>
+    <button class="btn-filled" disabled={busy} onclick={save}>{provider ? t("common.save") : t("common.add")}</button>
   {/snippet}
 </Dialog>

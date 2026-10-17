@@ -91,7 +91,10 @@
   {#if !device}
     <TopBar back="/" title={data.loaded ? t("errors.NOT_FOUND") : t("common.loading")} />
   {:else}
-    <TopBar {back} title={device.name}>
+    <TopBar {back}>
+      {#snippet leading()}
+        <span class="truncate text-sm font-semibold text-muted">{device.access === "shared" ? t("nav.shared") : (data.house(device.houseId)?.name ?? "")}</span>
+      {/snippet}
       {#snippet trailing()}
         {#if canEdit}
           <button class="btn-text" onclick={() => (editing = true)}><Icon name="edit" size={20} />{t("common.edit")}</button>
@@ -106,13 +109,13 @@
       {/snippet}
     </TopBar>
 
-    <div class="mx-auto max-w-4xl space-y-3 p-4 md:p-6">
+    <div class="max-w-4xl space-y-3 px-4 pt-4 md:px-3">
       <section class="card flex flex-wrap items-center gap-5 p-6">
-        <span class="grid size-16 shrink-0 place-items-center rounded-2xl {st?.tone === 'ok' ? 'bg-primary-container text-on-primary-container' : st?.tone === 'warn' ? 'bg-warn-container text-warn' : 'bg-surface-3 text-on-surface-variant'}">
+        <span class="grid size-16 shrink-0 place-items-center rounded-2xl {st?.tone === 'ok' ? 'bg-primary-container text-on-primary-container' : st?.tone === 'warn' ? 'bg-warn-container text-warn' : 'bg-glass-strong text-muted'}">
           <Icon name={deviceIcon(device)} size={32} />
         </span>
         <div class="min-w-0 flex-1">
-          <h1 class="text-[1.75rem] leading-tight">{device.name}</h1>
+          <h1 class="text-[2.2rem] leading-tight">{device.name}</h1>
           <div class="mt-1.5 flex flex-wrap items-center gap-2">
             {#if st}<StatusPill {...st} />{/if}
             {#if device.status.reach.checkedAt}<span class="text-xs text-muted">{t("device.checked", { when: relativeTime(device.status.reach.checkedAt) })}</span>{/if}
@@ -162,7 +165,7 @@
           {#if shares.length}
             <ul class="mt-3">
               {#each shares as s (s.userId)}
-                <li class="flex items-center gap-3 border-t border-outline-variant py-2.5 text-sm">
+                <li class="flex items-center gap-3 border-t border-on-surface/8 py-2.5 text-sm">
                   <span class="flex-1"><b class="font-medium">{s.username}</b> <span class="text-xs text-muted">{t("device.sharedSince", { when: relativeTime(s.createdAt) })}</span></span>
                   <button class="btn-text h-8" onclick={() => unshare(s)}>{t("device.revoke")}</button>
                 </li>

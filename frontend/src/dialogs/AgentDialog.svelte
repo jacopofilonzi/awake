@@ -64,18 +64,18 @@
     <div class="space-y-4">
       <div>
         <span class="field-label">{t("agent.token")}</span>
-        <div class="flex items-center gap-2 rounded-lg bg-surface px-3 py-2">
+        <div class="flex items-center gap-2 rounded-xl bg-on-surface/6 px-3 py-2">
           <code class="flex-1 font-mono text-sm break-all">{shownToken}</code>
           <button class="icon-btn" onclick={() => copy(shownToken!)} aria-label={t("common.copy")}><Icon name="copy" size={20} /></button>
         </div>
       </div>
       <div>
         <span class="field-label">{t("agent.configExample")}</span>
-        <pre class="overflow-x-auto rounded-lg bg-inverse px-4 py-3 font-mono text-xs leading-relaxed text-on-inverse">server = "{serverUrl}"
+        <pre class="overflow-x-auto rounded-xl bg-inverse px-4 py-3 font-mono text-xs leading-relaxed text-on-inverse">server = "{serverUrl}"
 token  = "{shownToken}"</pre>
         <p class="hint">{t("agent.configHint")}</p>
       </div>
-      <p class="flex gap-2 rounded-lg bg-warn-container px-3 py-2 text-sm text-warn"><Icon name="warning" size={20} />{t("agent.tokenOnce")}</p>
+      <p class="flex gap-2 rounded-xl bg-warn-container px-3 py-2 text-sm text-warn"><Icon name="warning" size={20} />{t("agent.tokenOnce")}</p>
     </div>
   {:else}
     <form onsubmit={(e) => (e.preventDefault(), save())}>
@@ -84,10 +84,10 @@ token  = "{shownToken}"</pre>
   {/if}
   {#snippet actions()}
     {#if shownToken}
-      <button class="btn-text" onclick={onclose}>{t("common.done")}</button>
+      <button class="btn-filled" onclick={onclose}>{t("common.done")}</button>
     {:else}
       <button class="btn-text" onclick={onclose}>{t("common.cancel")}</button>
-      <button class="btn-text" disabled={busy} onclick={save}>{agent ? t("common.save") : t("common.create")}</button>
+      <button class="btn-filled" disabled={busy} onclick={save}>{agent ? t("common.save") : t("common.create")}</button>
     {/if}
   {/snippet}
 </Dialog>

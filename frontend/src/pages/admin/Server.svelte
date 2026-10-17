@@ -77,9 +77,8 @@
 </script>
 
 <AppShell area="admin">
-  <TopBar title={t("admin.title")} />
-  <div class="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
-    <h2 class="text-[1.375rem]">{t("nav.server")}</h2>
+  <TopBar title={t("nav.server")} />
+  <div class="max-w-3xl space-y-6 px-4 pt-4 md:px-3">
     <section class="card-outlined p-5">
       <dl class="grid grid-cols-[auto_1fr] gap-x-6 gap-y-3 text-sm">
         <dt class="text-on-surface-variant">{t("admin.server.version")}</dt><dd class="text-right font-mono">{cfg?.version ?? "—"}</dd>
@@ -94,7 +93,7 @@
         {#if settings === null}
           <p class="p-4 text-sm text-muted">{t("common.loading")}</p>
         {:else}
-          <div class="flex items-center gap-4 border-b border-outline-variant px-4 py-3">
+          <div class="flex items-center gap-4 border-b border-on-surface/8 px-4 py-3">
             <div class="flex-1"><div class="text-sm font-medium">{t("admin.server.regEnabled")}</div><div class="text-xs text-on-surface-variant">{t("admin.server.regEnabledHint")}</div></div>
             <Switch checked={settings.registrationEnabled} label={t("admin.server.regEnabled")} onchange={(v) => saveSettings({ registrationEnabled: v })} />
           </div>
@@ -125,7 +124,7 @@
         {:else}
           <ul>
             {#each providers as p (p.id)}
-              <li class="flex items-center gap-3 px-4 py-3 not-last:border-b not-last:border-outline-variant">
+              <li class="flex items-center gap-3 px-4 py-3 not-last:border-b not-last:border-on-surface/8">
                 <span class="grid size-10 shrink-0 place-items-center rounded-full bg-secondary-container text-on-secondary-container"><Icon name="key" size={20} /></span>
                 <div class="min-w-0 flex-1">
                   <div class="flex flex-wrap items-center gap-2">

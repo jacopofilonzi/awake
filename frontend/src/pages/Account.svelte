@@ -63,7 +63,7 @@
 
 <AppShell area="app">
   <TopBar title={t("account.title")} />
-  <div class="mx-auto max-w-3xl space-y-3 p-4 md:p-6">
+  <div class="max-w-3xl space-y-3 px-4 pt-4 md:px-3">
     <section class="card flex items-center gap-4 p-5">
       <span class="grid size-14 place-items-center rounded-full bg-primary-container text-xl font-medium text-on-primary-container uppercase">{me.user.username[0]}</span>
       <div class="min-w-0 flex-1">
@@ -94,8 +94,8 @@
         <ul>
           {#each providers as p (p.id)}
             {@const linked = me.identities.find((i) => i.provider === p.id)}
-            <li class="flex items-center gap-3 border-t border-outline-variant py-3 first:border-t-0">
-              <span class="grid size-9 place-items-center rounded-full bg-surface-3 text-sm font-medium">{p.label[0]}</span>
+            <li class="flex items-center gap-3 border-t border-on-surface/8 py-3 first:border-t-0">
+              <span class="grid size-9 place-items-center rounded-full bg-glass-strong text-sm font-semibold">{p.label[0]}</span>
               <div class="min-w-0 flex-1">
                 <div class="text-sm font-medium">{p.label}</div>
                 <div class="truncate text-xs text-on-surface-variant">{linked ? (linked.email ?? t("account.linkedNoEmail")) : t("account.notLinked")}</div>

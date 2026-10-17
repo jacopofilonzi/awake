@@ -45,6 +45,6 @@
   </form>
   {#snippet actions()}
     <button class="btn-text" onclick={onclose}>{t("common.cancel")}</button>
-    <button class="btn-text" disabled={busy} onclick={() => save()}>{house ? t("common.save") : t("common.create")}</button>
+    <button class="btn-filled" disabled={busy} onclick={() => save()}>{house ? t("common.save") : t("common.create")}</button>
   {/snippet}
 </Dialog>

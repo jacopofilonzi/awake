@@ -61,7 +61,7 @@
       <fieldset class="space-y-2">
         <legend class="field-label">{t("members.role")}</legend>
         {#each ["member", "editor", "owner"] as const as r (r)}
-          <label class="flex cursor-pointer items-start gap-3 rounded-lg p-2 hover:bg-on-surface/5">
+          <label class="flex cursor-pointer items-start gap-3 rounded-xl p-2 hover:bg-on-surface/5">
             <input type="radio" class="mt-1 size-[18px] accent-(--md-primary)" value={r} bind:group={role} />
             <span><span class="block text-sm font-medium">{t(`roles.${r}`)}</span><span class="block text-xs text-on-surface-variant">{t(`roles.${r}Desc`)}</span></span>
           </label>
@@ -71,6 +71,6 @@
   </form>
   {#snippet actions()}
     <button class="btn-text" onclick={onclose}>{t("common.cancel")}</button>
-    <button class="btn-text" disabled={busy} onclick={submit}>{submitLabel}</button>
+    <button class="btn-filled" disabled={busy} onclick={submit}>{submitLabel}</button>
   {/snippet}
 </Dialog>

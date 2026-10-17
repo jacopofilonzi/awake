@@ -68,15 +68,15 @@
         <TextField label={t("auth.password")} type="text" bind:value={password} mono autocomplete="off" hint={t("auth.passwordHint")} />
       {/if}
       <label class="flex items-center gap-3 text-sm"><input type="checkbox" class="size-[18px] accent-(--md-primary)" bind:checked={admin} />{t("admin.users.makeAdmin")}</label>
-      {#if error}<p class="rounded-lg bg-error-container px-3 py-2 text-sm text-error" role="alert">{error}</p>{/if}
+      {#if error}<p class="rounded-xl bg-error-container px-3 py-2 text-sm text-error" role="alert">{error}</p>{/if}
     </form>
   {/if}
   {#snippet actions()}
     {#if created}
-      <button class="btn-text" onclick={onclose}>{t("common.done")}</button>
+      <button class="btn-filled" onclick={onclose}>{t("common.done")}</button>
     {:else}
       <button class="btn-text" onclick={onclose}>{t("common.cancel")}</button>
-      <button class="btn-text" disabled={busy} onclick={submit}>{t("common.create")}</button>
+      <button class="btn-filled" disabled={busy} onclick={submit}>{t("common.create")}</button>
     {/if}
   {/snippet}
 </Dialog>

@@ -65,7 +65,7 @@
 {#if agents === null}
   <p class="text-sm text-muted">{t("common.loading")}</p>
 {:else if agents.length === 0}
-  <div class="flex flex-col items-center gap-3 rounded-xl border border-dashed border-outline-variant px-6 py-14 text-center">
+  <div class="card-outlined flex flex-col items-center gap-3 border-dashed px-6 py-14 text-center">
     <Icon name="router" size={36} class="text-muted" />
     <p class="max-w-md text-on-surface-variant">{t("agent.empty")}</p>
   </div>
@@ -74,7 +74,7 @@
     {#each agents as a (a.id)}
       <article class="card-outlined p-4">
         <div class="flex items-start gap-3">
-          <span class="grid size-11 shrink-0 place-items-center rounded-xl {a.online ? 'bg-primary-container text-on-primary-container' : 'bg-surface-3 text-on-surface-variant'}"><Icon name="router" /></span>
+          <span class="grid size-11 shrink-0 place-items-center rounded-xl {a.online ? 'bg-primary-container text-on-primary-container' : 'bg-glass-strong text-muted'}"><Icon name="router" /></span>
           <div class="min-w-0 flex-1">
             <div class="flex flex-wrap items-center gap-2">
               <span class="font-medium">{a.name}</span>
@@ -93,7 +93,7 @@
             </Menu>
           {/if}
         </div>
-        <div class="mt-3 border-t border-outline-variant pt-2">
+        <div class="mt-3 border-t border-on-surface/8 pt-2">
           <p class="py-1 text-xs font-medium text-on-surface-variant">{t("agent.outputs")}</p>
           {#if a.outputs.length === 0}
             <p class="py-1 text-sm text-muted">{t("agent.noOutputs")}</p>

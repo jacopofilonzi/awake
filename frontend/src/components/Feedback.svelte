@@ -9,10 +9,10 @@
   {#key ui.snack.id}
     <div
       role="status"
-      class="fixed bottom-24 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-sm bg-inverse px-4 py-3.5 text-sm text-on-inverse shadow-lg sm:bottom-6"
+      class="fixed bottom-24 left-1/2 z-50 flex max-w-[calc(100vw-2rem)] -translate-x-1/2 items-center gap-3 rounded-2xl bg-inverse px-4 py-3 text-sm font-medium text-on-inverse shadow-soft md:bottom-6"
     >
       {ui.snack.text}
-      <button class="ml-2 font-medium text-primary-container" onclick={() => (ui.snack = null)}>{t("common.ok")}</button>
+      <button class="ml-2 font-bold text-primary-container" onclick={() => (ui.snack = null)}>{t("common.ok")}</button>
     </div>
   {/key}
 {/if}

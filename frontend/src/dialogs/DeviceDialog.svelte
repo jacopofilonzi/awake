@@ -144,11 +144,11 @@
       <TextField label={t("device.form.ip")} bind:value={ip} placeholder="192.168.1.20" mono hint={t("device.form.ipHint")} error={errors.ip} inputmode="decimal" />
       <TextField label={t("device.form.port")} bind:value={port} placeholder="3389" mono hint={t("device.form.portHint")} error={errors.probePort} inputmode="numeric" />
     </div>
-    {#if formError}<p class="rounded-lg bg-error-container px-3 py-2 text-sm text-error" role="alert">{formError}</p>{/if}
+    {#if formError}<p class="rounded-xl bg-error-container px-3 py-2 text-sm text-error" role="alert">{formError}</p>{/if}
     <button type="submit" hidden aria-label={t("common.save")}></button>
   </form>
   {#snippet actions()}
     <button class="btn-text" onclick={onclose}>{t("common.cancel")}</button>
-    <button class="btn-text" disabled={busy} onclick={save}>{device ? t("common.save") : t("common.add")}</button>
+    <button class="btn-filled" disabled={busy} onclick={save}>{device ? t("common.save") : t("common.add")}</button>
   {/snippet}
 </Dialog>

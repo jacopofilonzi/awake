@@ -3,15 +3,16 @@
 
   let { tone, label }: { tone: Tone; label: string } = $props();
 
-  const styles: Record<Tone, string> = {
-    ok: "bg-ok-container text-ok",
-    off: "bg-surface-3 text-on-surface-variant",
-    warn: "bg-warn-container text-warn",
-    error: "bg-error-container text-error",
-    unknown: "border border-outline-variant text-muted",
+  // The text stays neutral; only the dot carries the color (muted palette).
+  const dots: Record<Tone, string> = {
+    ok: "bg-ok shadow-[0_0_0_3px_color-mix(in_srgb,var(--md-ok)_25%,transparent)]",
+    off: "bg-outline",
+    warn: "bg-warn animate-pulse",
+    error: "bg-error",
+    unknown: "bg-outline-variant",
   };
 </script>
 
-<span class="inline-flex h-6 items-center gap-1.5 rounded-lg px-2 text-xs font-medium whitespace-nowrap {styles[tone]}">
-  <span class="size-1.5 rounded-full bg-current {tone === 'warn' ? 'animate-pulse' : ''}"></span>{label}
+<span class="inline-flex h-6 max-w-full items-center gap-1.5 rounded-full bg-glass-strong px-2.5 text-xs font-semibold whitespace-nowrap {tone === 'unknown' ? 'text-muted' : 'text-on-surface-variant'}">
+  <span class="size-1.5 shrink-0 rounded-full {dots[tone]}"></span><span class="truncate">{label}</span>
 </span>

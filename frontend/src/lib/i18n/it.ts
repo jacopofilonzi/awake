@@ -114,6 +114,7 @@ export const it: Messages = {
     alreadyOn: "Acceso",
     press: "Premi",
     longPress: "Pressione lunga",
+    longShort: "Lunga",
     longPressTitle: "Pressione lunga?",
     longPressText: "Il pulsante di {name} verrà tenuto premuto. Su un computer forza lo spegnimento e si può perdere il lavoro non salvato.",
     sending: "Invio…",

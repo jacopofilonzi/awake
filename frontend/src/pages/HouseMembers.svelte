@@ -72,7 +72,7 @@
     <ul>
       {#each members as m (m.userId)}
         {@const self = m.userId === session.user?.id}
-        <li class="flex items-center gap-3 px-4 py-3 not-last:border-b not-last:border-outline-variant">
+        <li class="flex items-center gap-3 px-4 py-3 not-last:border-b not-last:border-on-surface/8">
           <span class="grid size-10 shrink-0 place-items-center rounded-full bg-secondary-container font-medium text-on-secondary-container uppercase">{m.username[0]}</span>
           <div class="min-w-0 flex-1">
             <div class="font-medium">{m.username}{#if self}<span class="ml-1 text-xs font-normal text-muted">({t("members.you")})</span>{/if}</div>
@@ -86,7 +86,7 @@
               {#each ["owner", "editor", "member"] as const as r (r)}
                 <MenuItem label={t(`roles.${r}`)} selected={m.role === r} onclick={() => setRole(m, r)} />
               {/each}
-              <div class="my-2 border-t border-outline-variant"></div>
+              <div class="my-2 border-t border-on-surface/8"></div>
               <MenuItem label={self ? t("house.leave") : t("members.remove")} icon={self ? "logout" : "delete"} danger onclick={() => remove(m)} />
             </Menu>
           {:else}

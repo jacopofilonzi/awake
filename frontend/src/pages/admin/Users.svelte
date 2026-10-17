@@ -69,14 +69,13 @@
 </script>
 
 <AppShell area="admin">
-  <TopBar title={t("admin.title")}>
-    {#snippet trailing()}<button class="btn-filled" onclick={() => (creating = true)}><Icon name="person-add" size={20} />{t("admin.users.newTitle")}</button>{/snippet}
+  <TopBar title={t("nav.users")}>
+    {#snippet trailing()}<button class="btn-filled" onclick={() => (creating = true)} aria-label={t("admin.users.newTitle")}><Icon name="person-add" size={18} /><span class="max-sm:hidden">{t("admin.users.newTitle")}</span></button>{/snippet}
   </TopBar>
-  <div class="mx-auto max-w-5xl space-y-4 p-4 md:p-6">
+  <div class="max-w-5xl space-y-4 px-4 pt-4 md:px-3">
     <p class="flex items-center gap-3 rounded-xl bg-primary-container px-4 py-3 text-sm text-on-primary-container"><Icon name="info" size={20} />{t("admin.banner")}</p>
 
-    <div class="flex items-baseline justify-between">
-      <h2 class="text-[1.375rem]">{t("nav.users")}</h2>
+    <div class="flex items-baseline justify-end">
       <span class="flex gap-3 text-sm">
         {#if noLogin}<span class="text-error">{t("admin.users.noLoginCount", { n: noLogin })}</span>{/if}
         {#if pending}<span class="text-warn">{t("admin.users.pendingCount", { n: pending })}</span>{/if}
@@ -90,7 +89,7 @@
         <ul>
           {#each users as u (u.id)}
             {@const self = u.id === session.user?.id}
-            <li class="flex flex-wrap items-center gap-3 px-4 py-3 not-last:border-b not-last:border-outline-variant">
+            <li class="flex flex-wrap items-center gap-3 px-4 py-3 not-last:border-b not-last:border-on-surface/8">
               <span class="grid size-10 shrink-0 place-items-center rounded-full bg-secondary-container font-medium text-on-secondary-container uppercase">{u.username[0]}</span>
               <div class="min-w-40 flex-1">
                 <div class="flex flex-wrap items-center gap-2">
@@ -141,5 +140,5 @@
 <NewUserDialog open={creating} onclose={() => (creating = false)} oncreated={load} />
 <Dialog open={linkFor !== null} icon="link" title={t("admin.users.passwordLink")} subtitle={linkFor?.username ?? ""} onclose={() => (linkFor = null)}>
   {#if linkFor}<LinkView link={linkFor.link} username={linkFor.username} />{/if}
-  {#snippet actions()}<button class="btn-text" onclick={() => (linkFor = null)}>{t("common.done")}</button>{/snippet}
+  {#snippet actions()}<button class="btn-filled" onclick={() => (linkFor = null)}>{t("common.done")}</button>{/snippet}
 </Dialog>

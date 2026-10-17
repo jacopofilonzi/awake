@@ -164,6 +164,7 @@ export const en = {
     alreadyOn: "On",
     press: "Press",
     longPress: "Long press",
+    longShort: "Long",
     longPressTitle: "Long press?",
     longPressText: "The button of {name} will be held down. On a computer this forces it off and may lose unsaved work.",
     sending: "Sending…",

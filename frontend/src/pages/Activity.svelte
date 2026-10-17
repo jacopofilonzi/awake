@@ -7,7 +7,7 @@
 
 <AppShell area="app">
   <TopBar title={t("activity.title")} />
-  <div class="mx-auto max-w-4xl p-4 md:p-6">
+  <div class="max-w-4xl px-4 pt-4 md:px-3">
     <p class="mb-4 text-sm text-on-surface-variant">{t("activity.intro")}</p>
     <div class="card-outlined"><LogList showHouse limit={150} /></div>
   </div>

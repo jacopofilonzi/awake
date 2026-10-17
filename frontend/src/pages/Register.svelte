@@ -39,7 +39,7 @@
 
 <AuthLayout title={t("auth.register.title")} subtitle={pending ? "" : t("auth.register.subtitle")}>
   {#if pending}
-    <p class="rounded-lg bg-warn-container px-4 py-3 text-sm text-warn">{t("auth.register.pending")}</p>
+    <p class="rounded-xl bg-warn-container px-4 py-3 text-sm text-warn">{t("auth.register.pending")}</p>
     <a class="btn-text mt-4 w-full" href="/login" use:link>{t("auth.backToLogin")}</a>
   {:else if !session.config?.registration.enabled}
     <p class="text-center text-sm text-on-surface-variant">{t("errors.REGISTRATION_DISABLED")}</p>
@@ -49,7 +49,7 @@
       <TextField label={t("auth.username")} bind:value={username} hint={t("auth.usernameHint")} autocomplete="username" autocapitalize="none" required />
       <TextField label={t("auth.password")} type="password" bind:value={password} hint={t("auth.passwordHint")} autocomplete="new-password" required />
       <TextField label={t("auth.confirmPassword")} type="password" bind:value={confirm} autocomplete="new-password" required />
-      {#if error}<p class="rounded-lg bg-error-container px-3 py-2 text-sm text-error" role="alert">{error}</p>{/if}
+      {#if error}<p class="rounded-xl bg-error-container px-3 py-2 text-sm text-error" role="alert">{error}</p>{/if}
       <button class="btn-filled w-full" disabled={busy}>{t("auth.register.submit")}</button>
     </form>
     {#if !session.config.registration.autoApprove}<p class="hint mt-3 text-center">{t("auth.register.needsApproval")}</p>{/if}
