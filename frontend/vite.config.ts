@@ -32,6 +32,8 @@ export default defineConfig({
   ],
   server: {
     port: 5173,
+    // On the LAN, not just localhost: board agents and phones reach the dev server at the PC's address.
+    host: true,
     proxy: {
       "/api": "http://localhost:8080",
       "/agent": { target: "ws://localhost:8080", ws: true },
