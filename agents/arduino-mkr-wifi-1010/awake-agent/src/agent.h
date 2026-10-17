@@ -3,6 +3,7 @@
 #include <stdint.h>
 
 #include "outputs.h"
+#include "status_led.h"
 
 // The Awake agent protocol v1 (docs/PROTOCOL.md) on the MKR WiFi 1010: Wi-Fi, the WebSocket connection
 // to the server (hello/welcome, heartbeats, 3×hb silence detection, backoff honouring the close codes),
@@ -26,6 +27,8 @@ struct AgentConfig {
 class Agent {
  public:
   // False when the configuration is invalid (the reason is logged): the agent then does nothing.
-  bool begin(const AgentConfig& config, const OutputConfig* outputs, uint8_t outputCount);
+  // The status LEDs are set up first, so they can show a configuration error in the outputs.
+  bool begin(const AgentConfig& config, const OutputConfig* outputs, uint8_t outputCount,
+             const StatusLedConfig* statusLeds, uint8_t statusLedCount);
   void loop();
 };

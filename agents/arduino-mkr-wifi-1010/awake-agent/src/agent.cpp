@@ -6,6 +6,7 @@
 #include "backoff.h"
 #include "log.h"
 #include "net.h"
+#include "status_led.h"
 #include "version.h"
 #include "watchdog.h"
 #include "ws_client.h"
@@ -44,6 +45,18 @@ bool helloOn[MAX_OUTPUTS];  // switch states sent in the last hello
 char firmware[65];
 
 bool due(uint32_t at) { return (int32_t)(millis() - at) >= 0; }
+
+// Called by WiFiNINA while it blocks on the association (up to WIFI_TIMEOUT_MS).
+void feedDuringWifi() {
+  watchdogFeed();
+  statusLeds::tick();
+}
+
+AgentStatus currentStatus() {
+  if (state == State::STOPPED) return AgentStatus::STOPPED;
+  if (!wifiUp) return AgentStatus::NO_WIFI;
+  return state == State::ONLINE ? AgentStatus::ONLINE : AgentStatus::CONNECTING;
+}
 
 bool send(const JsonDocument& doc) {
   char buf[2048];
@@ -243,6 +256,8 @@ void handleMessage(const char* text, size_t len) {
   if (strcmp(t, "hb") == 0) return;
   const char* id = doc["id"];
   if (!id) return;  // every command carries an id; without it there is nothing to answer
+  statusLeds::activity();
+  statusLeds::tick();  // before a probe blocks
   if (strcmp(t, "wake") == 0) return handleWake(id, doc);
   if (strcmp(t, "probe") == 0) return handleProbe(id, doc);
   if (strcmp(t, "press") == 0 || strcmp(t, "set") == 0) return handleOutputCommand(id, t, doc);
@@ -281,9 +296,14 @@ bool ensureWifi() {
 
 }  // namespace
 
-bool Agent::begin(const AgentConfig& config, const OutputConfig* outputList, uint8_t outputCount) {
+bool Agent::begin(const AgentConfig& config, const OutputConfig* outputList, uint8_t outputCount,
+                  const StatusLedConfig* ledList, uint8_t ledCount) {
   cfg = config;
   LOGI("agent", "%s starting", AWAKE_FIRMWARE);
+  if (!statusLeds::begin(ledList, ledCount, outputList, outputCount)) {
+    LOGE("agent", "invalid STATUS_LEDS in config.h: not connecting");
+    return false;
+  }
   if (!outputs.begin(outputList, outputCount, onLocalChange)) {
     LOGE("agent", "invalid outputs in config.h: not connecting");
     return false;
@@ -311,7 +331,7 @@ bool Agent::begin(const AgentConfig& config, const OutputConfig* outputList, uin
   for (uint8_t b : mac) seed = seed * 31 + b;
   randomSeed(seed);
 
-  WiFi.setFeedWatchdogFunc(watchdogFeed);
+  WiFi.setFeedWatchdogFunc(feedDuringWifi);
   WiFi.setTimeout(WIFI_TIMEOUT_MS);
   WiFi.noLowPowerMode();  // commands are answered promptly; the board is mains powered anyway
   plainClient.setConnectionTimeout(CONNECT_TIMEOUT_MS);
@@ -324,6 +344,8 @@ bool Agent::begin(const AgentConfig& config, const OutputConfig* outputList, uin
 
 void Agent::loop() {
   outputs.tick();
+  statusLeds::show(currentStatus());
+  statusLeds::tick();
   if (state == State::STOPPED) return;
   if (!ensureWifi()) return;
 

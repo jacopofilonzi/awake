@@ -4,6 +4,7 @@
 #pragma once
 
 #include "src/outputs.h"
+#include "src/status_led.h"
 
 // ---------- Wi-Fi (2.4 GHz only) ----------
 #define WIFI_SSID "my-network"
@@ -36,10 +37,22 @@
 // Most relay modules switch on with LOW: set activeLow = true for them. Leave the array empty for an
 // agent that only does Wake-on-LAN.
 static const OutputConfig OUTPUTS[] = {
-    // The on-board LED as a switch: lets you try outputs with nothing wired to the board.
-    Switch("led", LED_BUILTIN),
-
     // Examples:
     // Button("pc-power", 2, 300, 5000, true),  // relay on D2: 0.3 s press, 5 s long press (force off)
     // Switch("lamp", 3, 4, false, true),       // relay on D3, local push button on D4
+};
+
+// ---------- Status LEDs ----------
+// Show the agent's state without a serial monitor (patterns in src/status_led.h; README).
+//
+//   StatusLed(pin, activeLow = false)
+//     a single-colour LED: blink patterns.
+//   RgbStatusLed(redPin, greenPin, bluePin, activeLow = false)
+//     an RGB LED (with its resistors): the same patterns in colour. activeLow = true for common anode.
+//
+// Pins can't be shared with an output. Leave the array empty for no status LED.
+static const StatusLedConfig STATUS_LEDS[] = {
+    StatusLed(LED_BUILTIN),  // the on-board LED
+
+    // RgbStatusLed(5, 6, 7),  // an external RGB LED on D5/D6/D7 (common cathode)
 };

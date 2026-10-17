@@ -41,6 +41,7 @@ LED pulses) and the port may change number.
 | `AWAKE_TOKEN` | The token shown once when you create the agent in the web UI (house → Agents → New agent). |
 | `WOL_PORT` | UDP port of the magic packet, `9` (or `7`). |
 | `OUTPUTS` | The outputs, see below. |
+| `STATUS_LEDS` | LEDs showing the agent's state, see below. |
 
 `config.h` is git-ignored: it holds your Wi-Fi password and the token. The token is never logged.
 
@@ -48,7 +49,6 @@ LED pulses) and the port may change number.
 
 ```cpp
 static const OutputConfig OUTPUTS[] = {
-    Switch("led", LED_BUILTIN),               // the on-board LED, to try outputs with nothing wired
     Button("pc-power", 2, 300, 5000, true),   // relay on D2: 0.3 s press, 5 s long press, active low
     Switch("lamp", 3, 4, false, true),        // relay on D3, local push button on D4, starts off
 };
@@ -62,7 +62,32 @@ static const OutputConfig OUTPUTS[] = {
 
 The server only learns the id, the mode, whether a long press exists and the switch state. Keep an id
 unchanged once a device in the web UI uses it. At most 32 outputs; an empty array makes a
-Wake-on-LAN-only agent. An invalid configuration is logged and the LED blinks fast: the agent doesn't connect.
+Wake-on-LAN-only agent. An invalid configuration is logged and the status LED blinks fast: the agent
+doesn't connect.
+
+### Status LEDs
+
+```cpp
+static const StatusLedConfig STATUS_LEDS[] = {
+    StatusLed(LED_BUILTIN),    // the on-board LED
+    RgbStatusLed(5, 6, 7),     // an external RGB LED on D5/D6/D7 (common cathode, with resistors)
+};
+```
+
+- `StatusLed(pin, activeLow = false)`: a single-colour LED, blink patterns.
+- `RgbStatusLed(red, green, blue, activeLow = false)`: an RGB LED, the same patterns in colour
+  (digital pins, no PWM). `activeLow = true` for a common-anode LED.
+
+| State | Single-colour LED | RGB LED |
+|---|---|---|
+| No Wi-Fi | slow blink, 1 s on / 1 s off | red, slow blink |
+| Connecting to the server | double flash every 2 s | yellow, double flash |
+| Online | steady on | green, steady |
+| Stopped (the server doesn't support this protocol version) | short flash every 3 s | red, short flash |
+| Configuration error | fast blink (200 ms) | red, fast blink |
+| Command received | off for 150 ms | blue for 150 ms |
+
+A status LED's pins can't be used by an output. An empty array means no status LED. Up to 4.
 
 ## Wiring
 

@@ -9,6 +9,7 @@
 #endif
 
 #include "src/agent.h"
+#include "src/status_led.h"
 #include "src/watchdog.h"
 
 Agent agent;
@@ -22,12 +23,12 @@ void setup() {
   watchdogEnable();
 
   const AgentConfig config = {WIFI_SSID, WIFI_PASSWORD, AWAKE_HOST, AWAKE_PORT, AWAKE_TLS, AWAKE_PATH, AWAKE_TOKEN, WOL_PORT};
-  if (!agent.begin(config, OUTPUTS, sizeof OUTPUTS / sizeof OUTPUTS[0])) {
+  if (!agent.begin(config, OUTPUTS, sizeof OUTPUTS / sizeof OUTPUTS[0], STATUS_LEDS, sizeof STATUS_LEDS / sizeof STATUS_LEDS[0])) {
     // Configuration error (logged): keep the board alive and blink, so it is visible without a monitor.
-    pinMode(LED_BUILTIN, OUTPUT);
+    statusLeds::show(AgentStatus::CONFIG_ERROR);
     for (;;) {
       watchdogFeed();
-      digitalWrite(LED_BUILTIN, (millis() / 200) % 2);
+      statusLeds::tick();
     }
   }
 }
