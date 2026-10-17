@@ -47,6 +47,7 @@ export function houseRoutes(s: Services) {
       firmware: row.firmware,
       lastSeen: row.last_seen,
       createdAt: row.created_at,
+      details: null, // TODO(agent-details): filled for owners/editors
       outputs: outputs.map(
         (o): AgentOutput => ({
           id: o.output_id,

@@ -72,6 +72,7 @@ Immediately after the WebSocket opens, the agent **MUST** send `hello` as its fi
 | `token` | string | yes | The agent token shown once in the web UI when the agent is created (or its token regenerated). |
 | `fw` | string | no | Free-form firmware identifier, max 64 chars, shown in the UI. |
 | `outputs` | array | no | The agent's outputs (§5). Omitted or empty for an agent that only does Wake-on-LAN. |
+| `info` | object | no | What the agent knows about itself: platform, network, health (§5.2, the same fields without `t`). |
 
 Each output:
 
@@ -226,6 +227,38 @@ agent, a local schedule, a safety cut-off…), the agent **MUST** report it:
 - Changes that happen while the agent is disconnected are not queued: the next `hello` carries the
   current state (§3).
 
+### 5.2 `info`
+
+Optional and informational: the agent MAY describe itself and its health. The server keeps the last one
+received and shows it to the house owners and editors (also while the agent is offline, as "last known").
+
+```json
+{ "t": "info", "platform": "arduino-mkr-wifi-1010", "host": "mkr-sala", "ip": "192.168.1.60",
+  "ssid": "Casa", "rssi": -61, "uptime": 86400, "reset": "watchdog", "mem": 18200 }
+```
+
+| Field | Type | Meaning |
+|---|---|---|
+| `platform` | string, max 64 | Operating system/architecture or board, e.g. `windows/amd64`, `linux/arm64 (Raspberry Pi 4 Model B)`, `arduino-mkr-wifi-1010`. |
+| `host` | string, max 64 | Hostname. |
+| `ip` | string | IPv4 address of the agent on its LAN. |
+| `ssid` | string, max 32 | Wi-Fi network, when the agent is on Wi-Fi. |
+| `rssi` | integer | Wi-Fi signal in dBm, −120 to 0. |
+| `uptime` | integer | Seconds since the agent (program or board) started. |
+| `reset` | string | Why the agent last started: `power` (power-on), `watchdog`, `reset` (button or external reset), `software` (requested by the firmware or the OS), `brownout` (supply voltage dropped), `unknown`. |
+| `mem` | integer | Free memory in bytes (mostly useful on microcontrollers). |
+
+Rules:
+- Every field is optional: send only what the agent knows. Each `info` **replaces** the previous one
+  (a missing field means unknown, not unchanged).
+- The same object, without `t`, MAY be sent as the `info` field of `hello`. After that, send `info`
+  every **5 minutes** so that values that change (signal, memory, uptime) stay current.
+- The server ignores invalid fields one by one (wrong type, too long, out of range, unknown `reset`
+  value) and never closes the connection because of `info`.
+- The server ignores an `info` message that arrives less than **60 seconds** after the previous one
+  (`hello` always counts).
+- No reply is expected.
+
 ## 6. Heartbeat and liveness
 
 - After `welcome`, the agent **MUST** send `{ "t": "hb" }` every `hb` seconds.
@@ -296,10 +329,11 @@ FF FF FF FF FF FF  AA BB CC DD EE FF  AA BB CC DD EE FF  … (16 times)
 ```
 Agent                                         Server
   │ ── WebSocket connect /agent ──────────────▶ │
-  │ ── hello {v:1, token, outputs:[…]} ───────▶ │
+  │ ── hello {v:1, token, outputs:[…], info} ─▶ │
   │ ◀── welcome {v:1, hb:20} ────────────────── │
   │ ── hb ────────────────────────────────────▶ │   every 20 s
   │ ◀── hb ──────────────────────────────────── │
+  │ ── info {rssi, uptime, mem…} ─────────────▶ │   every 5 min
   │                                             │   user presses "Wake"
   │ ◀── wake {id:"a", mac} ─────────────────── │
   │   (broadcast magic packet)                  │
@@ -327,6 +361,7 @@ Agent                                         Server
 - [ ] Handles `press`: acks when the press starts, rejects `busy` while pressing, `no long press` when not configured.
 - [ ] Handles `set`: acks with the resulting `on`.
 - [ ] Sends `out_state` for every switch change not caused by `set`, only while connected.
+- [ ] Optional: describes itself with `info` (in `hello`, then every 5 minutes): platform, LAN IP, Wi-Fi signal, uptime, last reset reason, free memory.
 - [ ] Ignores unknown message types and fields.
 - [ ] Reconnects forever with exponential backoff + jitter, honouring the close codes of §7.
 - [ ] Never logs the token.

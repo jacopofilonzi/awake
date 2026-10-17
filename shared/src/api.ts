@@ -169,6 +169,53 @@ export interface AgentOutput {
   deviceId: string | null;
 }
 
+/** Why an agent last started (docs/PROTOCOL.md §5.2). */
+export type AgentResetReason = "power" | "watchdog" | "reset" | "software" | "brownout" | "unknown";
+export const AGENT_RESET_REASONS: readonly AgentResetReason[] = ["power", "watchdog", "reset", "software", "brownout", "unknown"];
+
+/** What an agent reports about itself (`info`, docs/PROTOCOL.md §5.2); every field is optional. */
+export interface AgentInfo {
+  platform?: string;
+  host?: string;
+  /** LAN IPv4 address. */
+  ip?: string;
+  ssid?: string;
+  /** Wi-Fi signal, dBm. */
+  rssi?: number;
+  /** Seconds since the agent started, as of `infoAt`. */
+  uptime?: number;
+  reset?: AgentResetReason;
+  /** Free memory, bytes. */
+  mem?: number;
+}
+
+export interface AgentConnection {
+  /** Start of the current connection; null while offline. */
+  since: Millis | null;
+  /** Address the agent connects from, as seen by the server (current or last connection). */
+  ip: string | null;
+  /** Connections opened in the last 24 hours, the current one included. */
+  connections24h: number;
+  /** End of the last connection and its WebSocket close code (1006: dropped without a close frame). */
+  lastClose: { at: Millis; code: number } | null;
+}
+
+export interface AgentStats {
+  /** Commands (wake, press, set) sent to this agent in the last 24 hours, and how many failed. */
+  commands24h: number;
+  failed24h: number;
+  lastCommandAt: Millis | null;
+}
+
+/** Diagnostics of an agent: only for house owners and editors. */
+export interface AgentDetails {
+  /** Last `info` received (kept while offline), and when. */
+  info: AgentInfo | null;
+  infoAt: Millis | null;
+  connection: AgentConnection;
+  stats: AgentStats;
+}
+
 export interface Agent {
   id: string;
   houseId: string;
@@ -178,6 +225,8 @@ export interface Agent {
   lastSeen: Millis | null;
   outputs: AgentOutput[];
   createdAt: Millis;
+  /** Null for members (network details are for whoever manages the house). */
+  details: AgentDetails | null;
 }
 
 export interface AgentWithToken {

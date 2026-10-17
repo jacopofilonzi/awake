@@ -1,7 +1,7 @@
 // Agent <-> server messages, mirroring docs/PROTOCOL.md (the normative contract: agents share no code
 // with the server). Change both together.
 
-import { OUTPUT_ID_RE } from "@awake/shared";
+import { AGENT_RESET_REASONS, IPV4_RE, OUTPUT_ID_RE, type AgentInfo, type AgentResetReason } from "@awake/shared";
 
 export const MAX_MESSAGE_BYTES = 8 * 1024;
 export const MAX_OUTPUTS = 32;
@@ -21,7 +21,8 @@ export const CloseCode = {
 export type HelloOutput = { id: string; mode: "button"; long: boolean } | { id: string; mode: "switch"; on: boolean };
 
 export type AgentToServer =
-  | { t: "hello"; v: number; token: string; fw?: string; outputs?: unknown }
+  | { t: "hello"; v: number; token: string; fw?: string; outputs?: unknown; info?: unknown }
+  | ({ t: "info" } & Record<string, unknown>)
   | { t: "hb" }
   | { t: "ack"; id: string; ok: boolean; err?: string; on?: boolean }
   | { t: "probe_result"; id: string; up: boolean; ms?: number; err?: string }
@@ -66,4 +67,33 @@ export function parseMessage(text: string): AgentToServer | null {
   } catch {
     return null;
   }
+}
+
+/** Minimum interval between two `info` messages; earlier ones are ignored (PROTOCOL.md §5.2). */
+export const INFO_MIN_INTERVAL_MS = 60_000;
+
+const shortString = (v: unknown, max: number): string | undefined =>
+  typeof v === "string" && v.trim() !== "" && v.length <= max ? v.trim() : undefined;
+const intIn = (v: unknown, min: number, max: number): number | undefined =>
+  typeof v === "number" && Number.isInteger(v) && v >= min && v <= max ? v : undefined;
+
+/**
+ * The valid fields of an `info` object (from `hello.info` or an `info` message, whose `t` is ignored).
+ * Lenient: invalid fields are dropped one by one, never the whole object; null when nothing is valid.
+ */
+export function parseInfo(raw: unknown): AgentInfo | null {
+  if (!raw || typeof raw !== "object" || Array.isArray(raw)) return null;
+  const r = raw as Record<string, unknown>;
+  const info: AgentInfo = {
+    platform: shortString(r.platform, 64),
+    host: shortString(r.host, 64),
+    ip: typeof r.ip === "string" && IPV4_RE.test(r.ip) ? r.ip : undefined,
+    ssid: shortString(r.ssid, 32),
+    rssi: intIn(r.rssi, -120, 0),
+    uptime: intIn(r.uptime, 0, 10 * 365 * 86400),
+    reset: AGENT_RESET_REASONS.includes(r.reset as AgentResetReason) ? (r.reset as AgentResetReason) : undefined,
+    mem: intIn(r.mem, 0, 2 ** 40),
+  };
+  for (const k of Object.keys(info) as (keyof AgentInfo)[]) if (info[k] === undefined) delete info[k];
+  return Object.keys(info).length ? info : null;
 }
