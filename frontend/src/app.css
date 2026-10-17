@@ -132,6 +132,13 @@
     @apply bg-surface text-on-surface font-sans antialiased;
     min-height: 100dvh;
   }
+  /* The native option list ignores the select's transparent background (white popup on Windows
+     Chrome) but inherits its text color: give options the theme's colors explicitly. */
+  option,
+  optgroup {
+    background-color: var(--md-surface-2);
+    color: var(--md-on-surface);
+  }
   button:not(:disabled),
   [role="button"] {
     cursor: pointer;
