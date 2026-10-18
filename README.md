@@ -118,4 +118,10 @@ the server version, then the Docker image `ghcr.io/jacopofilonzi/awake` tagged `
 
 ## Upgrade notes
 
-Nothing yet: this is the first version.
+### 0.1.0 → 0.2.0
+
+- Nothing to do before upgrading: `docker compose pull && docker compose up -d`.
+- The container now starts as root only to make `/data` owned by the `node` user (a `./data` bind mount
+  created by Docker as root used to stop the server with "unable to open database file"), then runs the
+  server as `node`. A manual `chown` done to work around it can stay.
+- Run CLI commands in the container as `node`: `docker compose exec -u node awake node index.js …`.
