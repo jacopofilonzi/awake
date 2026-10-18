@@ -1,5 +1,6 @@
 // Configuration, read once from the environment at startup. Every variable is documented in .env.example.
 
+import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { INFO_MIN_INTERVAL_MS } from "./agents/protocol.ts";
@@ -89,7 +90,7 @@ export function loadConfig(env: NodeJS.ProcessEnv = process.env): Config {
   return {
     port: int(env.PORT, 8080, "PORT"),
     // backend/src/config.ts or backend/dist/index.js -> frontend/dist
-    webDir: path.resolve(env.WEB_DIR?.trim() || path.join(here, "../../frontend/dist")),
+    webDir: path.resolve(env.WEB_DIR?.trim() || defaultWebDir()),
     publicUrl: parsed.origin,
     dataDir: path.resolve(env.DATA_DIR?.trim() || "./data"),
     trustProxy: bool(env.TRUST_PROXY, false),
@@ -107,6 +108,17 @@ function clientIpHeader(env: NodeJS.ProcessEnv): string {
   if (!/^[A-Za-z0-9-]{1,64}$/.test(name)) throw new ConfigError("CLIENT_IP_HEADER must be a header name, e.g. CF-Connecting-IP");
   if (!bool(env.TRUST_PROXY, false)) log.warn("config", "CLIENT_IP_HEADER is ignored without TRUST_PROXY=true");
   return name.toLowerCase();
+}
+
+/**
+ * The built UI when WEB_DIR is not set (or set but empty, e.g. `WEB_DIR=` copied from .env.example into
+ * a .env that docker compose passes to the container, hiding the image's WEB_DIR): `web/` next to the
+ * bundle (the Docker image: /app/index.js + /app/web), else frontend/dist of the repository
+ * (backend/src/config.ts or backend/dist/index.js).
+ */
+function defaultWebDir(): string {
+  const candidates = [path.join(here, "web"), path.join(here, "../../frontend/dist")];
+  return candidates.find((dir) => fs.existsSync(path.join(dir, "index.html"))) ?? candidates[1]!;
 }
 
 function loadSecretKey(env: NodeJS.ProcessEnv): string | null {
