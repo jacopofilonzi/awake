@@ -21,11 +21,13 @@ Targets: server on Linux (Docker); agents on Windows, Linux, macOS, Raspberry Pi
   several files: read what you need, then present the plan (what changes, which files, trade-offs, open
   questions) and wait for my approval before editing. Small, obvious fixes can go straight in. If the plan
   changes significantly along the way, stop and ask again.
-- **Parallelize independent modules.** When the work needs several modules and you judge it feasible, first
-  define and commit the shared constructs yourself (types, interfaces, API contracts, config, shared
-  helpers), then launch several agents in parallel, one per module, each with a clear scope and the files
-  it owns. Afterwards, review and integrate their output and run `make check` on the whole. If the modules
-  are too coupled to split cleanly, do the work sequentially instead.
+- **Big changes go to one agent, small ones you do yourself.** The goal is to save the main conversation's
+  context: the agent does the heavy reading and editing in its own context. Don't spawn sub-agents for
+  everything. For a big change, once I've approved the plan, write it out in full (goal, steps, files it
+  owns, constraints, how to verify) and launch a single agent to carry it out following that plan; it
+  answers with a short report (what changed, which files, `make check` result, open issues), not file
+  dumps. Then check it from the diff and `make check` instead of re-reading everything it read. Small
+  changes you make directly in the main conversation, without agents.
 - **Propose an architecture change when something outgrows its start.** A part that began small and
   simple (e.g. a dashboard in plain HTML for a couple of tasks, a single-file script, a hand-rolled
   config) may keep gaining responsibilities. When it starts to strain its original approach (state wired
