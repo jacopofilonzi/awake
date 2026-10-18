@@ -118,6 +118,12 @@ the server version, then the Docker image `ghcr.io/jacopofilonzi/awake` tagged `
 
 ## Upgrade notes
 
+### 0.2.0 → 0.3.0
+
+- Nothing to do before upgrading: `docker compose pull && docker compose up -d`.
+- The database gets migration 5 (an optional icon per device); it is backed up first
+  (`awake.db.bak-v4-<time>` next to it). Existing devices keep the automatic icon.
+
 ### 0.1.0 → 0.2.0
 
 - Nothing to do before upgrading: `docker compose pull && docker compose up -d`.
