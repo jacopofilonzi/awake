@@ -33,6 +33,7 @@ help:
 	@echo ""
 	@echo "Arduino MKR WiFi 1010 agent (needs arduino-cli; not part of make check)"
 	@echo "  make -C agents/arduino-mkr-wifi-1010 config | build | upload PORT=COM8 | monitor PORT=COM8"
+	@echo "  make -C agents/esp32-d1-mini build | bin | upload PORT=COM5 | monitor PORT=COM5"
 	@echo ""
 	@echo "  make clean           remove build output"
 

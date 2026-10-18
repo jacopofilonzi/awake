@@ -28,3 +28,22 @@ jobs:
       - run: npm ci
       - run: make check
       - run: make test
+
+  # The ESP32 firmware needs no configuration file, so it compiles as is (the MKR one needs a config.h).
+  esp32:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: 1.5.1
+      # The core (compilers included) is a few hundred MB: cache it, keyed on the pinned versions.
+      - uses: actions/cache@v6
+        with:
+          path: ~/.arduino15
+          key: arduino15-${{ hashFiles('agents/esp32-d1-mini/awake-agent/sketch.yaml') }}
+      - run: make -C agents/esp32-d1-mini bin
+      - uses: actions/upload-artifact@v7
+        with:
+          name: esp32-d1-mini-firmware
+          path: agents/esp32-d1-mini/dist/*.bin

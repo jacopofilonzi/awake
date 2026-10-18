@@ -1,5 +1,7 @@
 # Builds and publishes the server's Docker image (ghcr.io/<owner>/awake) when a vX.Y.Z tag is pushed,
-# after the same checks as CI. A manual run builds the current branch and tags the image with its name.
+# after the same checks as CI, and attaches the ESP32 D1 mini firmware to the GitHub release (created
+# here if it doesn't exist yet; its notes are written by hand). A manual run builds the current branch
+# and tags the image with its name.
 #   git tag v0.2.0 && git push origin v0.2.0
 name: Release
 
@@ -59,3 +61,26 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  firmware:
+    needs: check
+    if: github.ref_type == 'tag'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - uses: arduino/setup-arduino-cli@v2
+        with:
+          version: 1.5.1
+      - uses: actions/cache@v6
+        with:
+          path: ~/.arduino15
+          key: arduino15-${{ hashFiles('agents/esp32-d1-mini/awake-agent/sketch.yaml') }}
+      - run: make -C agents/esp32-d1-mini bin
+      - name: Attach to the release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1 || gh release create "$GITHUB_REF_NAME" --verify-tag --title "Awake ${GITHUB_REF_NAME#v}" --notes "Release notes coming."
+          gh release upload "$GITHUB_REF_NAME" agents/esp32-d1-mini/dist/*.bin --clobber

@@ -8,8 +8,9 @@ outbound WebSocket connection to the Awake server, so nothing has to be opened o
 |---|---|---|
 | [`go/`](go/) | Windows, Linux, macOS, Raspberry Pi (a single binary, no runtime) | Reference implementation |
 | [`arduino-mkr-wifi-1010/`](arduino-mkr-wifi-1010/) | Arduino MKR WiFi 1010 (C++, arduino-cli) | Wake-on-LAN, probes, relay outputs on GPIO |
+| [`esp32-d1-mini/`](esp32-d1-mini/) | ESP32 D1 mini / ESP32-WROOM-32 (C++, arduino-cli) | Wake-on-LAN, probes, relay outputs; configured from a setup page on the board, firmware attached to every release (flash from the browser) |
 
-More boards (ESP32, …) can be added as `agents/<board-name>/`.
+More boards can be added as `agents/<board-name>/`.
 
 ## Writing an agent for a new board
 

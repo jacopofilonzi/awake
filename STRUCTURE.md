@@ -12,10 +12,12 @@ repo/
 ├── agents/
 │   ├── README.md     list of agents, how to contribute one
 │   ├── go/           Go 1.27 — reference agent (PC, Raspberry Pi), simulated outputs
-│   └── arduino-mkr-wifi-1010/  C++ (arduino-cli) — firmware for the MKR WiFi 1010, GPIO outputs
+│   ├── arduino-mkr-wifi-1010/  C++ (arduino-cli) — firmware for the MKR WiFi 1010, GPIO outputs
+│   └── esp32-d1-mini/  C++ (arduino-cli, esp32 core) — ESP32 D1 mini firmware, setup page, .bin in releases
 ├── docs/PROTOCOL.md  agent ↔ server protocol v1: the only contract with the agents
 ├── .github/workflows ci.yml (make check + make test on push/PR); release.yml (vX.Y.Z tag: checks,
-│                     tag = server version, Docker image to ghcr.io/jacopofilonzi/awake, amd64 + arm64)
+│                     tag = server version, Docker image to ghcr.io/jacopofilonzi/awake, amd64 + arm64,
+│                     ESP32 firmware .bin attached to the GitHub release); ci.yml also compiles the ESP32 firmware
 ├── Dockerfile        build stage (npm ci, vite, esbuild) → node:24-alpine: backend bundle + UI in /app/web;
 │                     docker-entrypoint.sh makes /data owned by `node` (bind mounts), then runs as `node`
 ├── docker-compose.yml  runs ghcr.io/jacopofilonzi/awake:${AWAKE_VERSION:-latest} (the image CI publishes on tags)
@@ -180,4 +182,29 @@ agents/arduino-mkr-wifi-1010/awake-agent/
     ├── sysinfo.cpp     info (§5.2): reset cause from PM->RCAUSE (read first in setup), uptime past the
     │                   millis() wrap, free RAM (stack − sbrk(0))
     └── watchdog.cpp, log.cpp, version.h
+```
+
+## ESP32 D1 mini agent (`agents/esp32-d1-mini`)
+
+Firmware for the ESP32 D1 mini (ESP32-WROOM-32). Built with arduino-cli through its own Makefile
+(`build|bin|upload|monitor`); core esp32:esp32 3.3.12 and ArduinoJson pinned in `sketch.yaml`, partition
+table `min_spiffs`. **Nothing is compiled in**: Wi-Fi, server, token, Wake-on-LAN port, status LED and
+outputs are entered on a setup page served by the board and kept in NVS, so CI builds one image for
+everyone. `make bin` writes `-install.bin` (merged, flash at 0x0: wipes the setup, which lives in NVS at
+0x9000) and `-update.bin` (app only, flash at 0x10000: keeps it). Not part of `make check`; CI compiles it.
+No unit tests and no hardware in the loop yet: checked by compiling. Details and the flashing guide (from
+the browser, esptool-js) in its README.
+
+```text
+agents/esp32-d1-mini/awake-agent/
+├── awake-agent.ino     start: load the setup, setup mode (none saved, RST pressed twice, BOOT held) or agent
+├── sketch.yaml         arduino-cli profile: pinned core, libraries, partition scheme
+└── src/
+    ├── agent.cpp       protocol (same state machine as the MKR agent), Wi-Fi non-blocking, info with host
+    ├── settings.cpp    the setup as JSON in NVS: validation (server URL, token, safe GPIOs, no pin twice)
+    ├── portal.cpp      setup mode: access point "Awake-Setup-XXXX", captive DNS, setup page (inline HTML/JS)
+    ├── tls.cpp         wss:// validated with the core's built-in root certificate bundle
+    ├── net.cpp         magic packet (limited + directed broadcast), ICMP via ESP-IDF ping, TCP probe
+    ├── ws_client.cpp, outputs.cpp, status_led.cpp, backoff.cpp   ported from the MKR agent (setup LED pattern added)
+    └── sysinfo.cpp (esp_reset_reason, uptime, free heap), watchdog.cpp (task WDT 30 s), log.cpp, version.h
 ```
