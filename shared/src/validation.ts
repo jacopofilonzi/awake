@@ -2,7 +2,7 @@
 // A zod issue whose message is an ErrorCode is reported as that code, anything else as VALIDATION.
 
 import { z } from "zod";
-import { HOUSE_ICONS } from "./api.ts";
+import { DEVICE_ICONS, HOUSE_ICONS } from "./api.ts";
 import type { ErrorCode } from "./errors.ts";
 
 const code = (c: ErrorCode) => ({ message: c });
@@ -52,8 +52,11 @@ export const portSchema = z.number().int(code("INVALID_PORT")).min(1, code("INVA
 /** Output ids as declared by agents (docs/PROTOCOL.md §3). */
 export const OUTPUT_ID_RE = /^[a-z0-9][a-z0-9_-]{0,31}$/;
 
+export const deviceIconSchema = z.enum(DEVICE_ICONS);
+
 export const deviceInputSchema = z.object({
   name: nameSchema,
+  icon: deviceIconSchema.nullable().default(null),
   ip: ipSchema.nullable().default(null),
   probePort: portSchema.nullable().default(null),
   action: z.discriminatedUnion("type", [

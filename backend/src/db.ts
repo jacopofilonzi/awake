@@ -10,7 +10,7 @@
 // - houses (with an icon from HOUSE_ICONS), with house_members (role owner|editor|member)
 // - agents (per house; `info` = JSON of the last AgentInfo reported) and agent_outputs (as last
 //   declared by the agent in its hello); agent_sessions: one row per connection, kept for 7 days
-// - devices (per house): kind 'wol' (mac + device_agents) or 'output' (agent_id + output_id)
+// - devices (per house; icon from DEVICE_ICONS, NULL = automatic by kind): kind 'wol' (mac + device_agents) or 'output' (agent_id + output_id)
 // - device_shares: a device shared directly with a user (use only)
 // - action_log: every action, with its outcome
 // Secrets (sessions, tokens, passwords) are stored only as hashes.
@@ -203,6 +203,11 @@ export const migrations = [
   // 4: an icon per house (a name from HOUSE_ICONS; the API maps unknown values to "house").
   `
   ALTER TABLE houses ADD COLUMN icon TEXT NOT NULL DEFAULT 'house';
+  `,
+  // 5: an optional icon per device (a name from DEVICE_ICONS; NULL = automatic, by kind; the API maps
+  // unknown values to NULL). Existing devices stay automatic.
+  `
+  ALTER TABLE devices ADD COLUMN icon TEXT;
   `,
 ];
 

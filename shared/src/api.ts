@@ -250,8 +250,35 @@ export type DeviceActionConfig =
   /** An output (button or switch) of an agent of the same house. */
   | { type: "output"; agentId: string; outputId: string };
 
+/** Icons a device can be given instead of the automatic one (by kind); Lucide names, the UI maps them. */
+export const DEVICE_ICONS = [
+  "monitor",
+  "laptop",
+  "server",
+  "hard-drive",
+  "printer",
+  "tv",
+  "gamepad-2",
+  "router",
+  "lightbulb",
+  "lamp",
+  "plug",
+  "fan",
+  "heater",
+  "air-vent",
+  "cctv",
+  "speaker",
+  "coffee",
+  "refrigerator",
+  "washing-machine",
+  "door-closed",
+] as const;
+export type DeviceIcon = (typeof DEVICE_ICONS)[number];
+
 export interface DeviceInput {
   name: string;
+  /** null: automatic (the UI picks one by kind). */
+  icon: DeviceIcon | null;
   /** IPv4 on the agents' LAN: enables the online/offline check. */
   ip: string | null;
   /** Check with a TCP connect to this port instead of ping (e.g. 3389 for Windows). */
@@ -259,7 +286,8 @@ export interface DeviceInput {
   action: DeviceActionConfig;
 }
 
-export type DeviceConfig = Omit<DeviceInput, "name">;
+/** The icon is not config: everyone who sees the device gets it (in `Device.icon`). */
+export type DeviceConfig = Omit<DeviceInput, "name" | "icon">;
 
 export type Reach =
   | { state: "unknown"; reason: "no_ip" | "no_agents" | "not_checked"; checkedAt: Millis | null }
@@ -292,6 +320,8 @@ export interface Device {
   houseId: string;
   houseName: string;
   name: string;
+  /** null: automatic (the UI picks one by kind). */
+  icon: DeviceIcon | null;
   access: DeviceAccess;
   kind: "wol" | "output";
   /** Actions available for this device, given its kind and its output's capabilities. */

@@ -4,12 +4,14 @@
 import { Hono } from "hono";
 import { z } from "zod";
 import {
+  DEVICE_ICONS,
   deviceActionSchema,
   deviceInputSchema,
   usernameSchema,
   type Device,
   type DeviceAccess,
   type DeviceConfig,
+  type DeviceIcon,
   type DeviceShare,
   type StatusMap,
 } from "@awake/shared";
@@ -31,6 +33,7 @@ export function deviceRoutes(s: Services) {
     houseId: row.house_id,
     houseName: row.house_name,
     name: row.name,
+    icon: iconOf(row),
     access,
     kind: row.kind,
     actions: devices.actions(row),
@@ -83,6 +86,7 @@ export function deviceRoutes(s: Services) {
     const a = input.action;
     const cols = {
       name: input.name,
+      icon: input.icon,
       kind: a.type,
       mac: a.type === "wol" ? a.mac : null,
       agent_id: a.type === "output" ? a.agentId : null,
@@ -94,11 +98,12 @@ export function deviceRoutes(s: Services) {
       transaction(db, () => {
         if (create) {
           db.prepare(
-            "INSERT INTO devices (id, house_id, name, kind, mac, agent_id, output_id, ip, probe_port, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-          ).run(deviceId, houseId, cols.name, cols.kind, cols.mac, cols.agent_id, cols.output_id, cols.ip, cols.probe_port, Date.now());
+            "INSERT INTO devices (id, house_id, name, icon, kind, mac, agent_id, output_id, ip, probe_port, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+          ).run(deviceId, houseId, cols.name, cols.icon, cols.kind, cols.mac, cols.agent_id, cols.output_id, cols.ip, cols.probe_port, Date.now());
         } else {
-          db.prepare("UPDATE devices SET name = ?, kind = ?, mac = ?, agent_id = ?, output_id = ?, ip = ?, probe_port = ? WHERE id = ?").run(
+          db.prepare("UPDATE devices SET name = ?, icon = ?, kind = ?, mac = ?, agent_id = ?, output_id = ?, ip = ?, probe_port = ? WHERE id = ?").run(
             cols.name,
+            cols.icon,
             cols.kind,
             cols.mac,
             cols.agent_id,
@@ -231,6 +236,11 @@ export function deviceRoutes(s: Services) {
   });
 
   return app;
+}
+
+// An icon dropped from DEVICE_ICONS in a later version falls back to automatic instead of breaking old rows.
+function iconOf(row: DeviceRow): DeviceIcon | null {
+  return row.icon !== null && (DEVICE_ICONS as readonly string[]).includes(row.icon) ? (row.icon as DeviceIcon) : null;
 }
 
 function configOf(db: Db, row: DeviceRow): DeviceConfig {

@@ -176,11 +176,18 @@ A device belongs to a house and has one action:
 `DeviceInput`:
 
 ```json
-{ "name": "PC", "ip": "192.168.1.20", "probePort": 3389, "action": { "type": "wol", "mac": "aa-bb-cc-dd-ee-ff", "agentIds": ["…"] } }
+{ "name": "PC", "icon": "monitor", "ip": "192.168.1.20", "probePort": 3389, "action": { "type": "wol", "mac": "aa-bb-cc-dd-ee-ff", "agentIds": ["…"] } }
 ```
 
-`Device`: `{ id, houseId, houseName, name, access, kind, actions, status, config }`. `access` is the
-user's role in the house, or `"shared"`; `config` (MAC, IP, agents) only for owners and editors;
+`icon` is one of `DEVICE_ICONS` (`shared/src/api.ts`): `monitor`, `laptop`, `server`, `hard-drive`,
+`printer`, `tv`, `gamepad-2`, `router`, `lightbulb`, `lamp`, `plug`, `fan`, `heater`, `air-vent`, `cctv`,
+`speaker`, `coffee`, `refrigerator`, `washing-machine`, `door-closed`; or `null` (the default: automatic,
+the UI picks one by kind). Anything else is `400 VALIDATION`. `PUT` replaces the whole input, so a body
+without `icon` sets it back to automatic.
+
+`Device`: `{ id, houseId, houseName, name, icon, access, kind, actions, status, config }`. `access` is the
+user's role in the house, or `"shared"`; `icon` is returned to everyone who sees the device (`null` =
+automatic); `config` (MAC, IP, agents) only for owners and editors;
 `actions` lists what can be sent given the kind and the output's capabilities.
 
 `DeviceStatus`:

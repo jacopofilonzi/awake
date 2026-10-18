@@ -40,6 +40,8 @@ export interface DeviceRow {
   id: string;
   house_id: string;
   name: string;
+  /** A name from DEVICE_ICONS, or null (automatic); not validated on read. */
+  icon: string | null;
   kind: "wol" | "output";
   mac: string | null;
   agent_id: string | null;
