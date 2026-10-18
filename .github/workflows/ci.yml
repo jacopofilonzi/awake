@@ -29,7 +29,8 @@ jobs:
       - run: make check
       - run: make test
 
-  # The ESP32 firmware needs no configuration file, so it compiles as is (the MKR one needs a config.h).
+  # Checks that the ESP32 firmware still compiles (it needs no configuration file; the MKR one needs a
+  # config.h). Nothing is published: people build and flash their agents themselves.
   esp32:
     runs-on: ubuntu-latest
     steps:
@@ -42,8 +43,4 @@ jobs:
         with:
           path: ~/.arduino15
           key: arduino15-${{ hashFiles('agents/esp32-d1-mini/awake-agent/sketch.yaml') }}
-      - run: make -C agents/esp32-d1-mini bin
-      - uses: actions/upload-artifact@v7
-        with:
-          name: esp32-d1-mini-firmware
-          path: agents/esp32-d1-mini/dist/*.bin
+      - run: make -C agents/esp32-d1-mini build

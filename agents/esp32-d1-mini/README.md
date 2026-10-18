@@ -8,15 +8,19 @@ and signal, uptime, last restart reason, free memory).
 **Nothing is compiled in**: the same firmware file works for everyone. Wi-Fi, server, token and outputs
 are entered on the board's **setup page**, from a phone, and kept in the board's flash.
 
-## Install (no tools needed)
+## Install
 
-Every release has the firmware attached ([releases](https://github.com/jacopofilonzi/awake/releases)), in
-two files:
+Firmware is not published: build it from this repository (see *Build from source*). `make bin` writes
+two files to `dist/`; one build works for any board, since nothing is configured at compile time, so
+the files can be passed to whoever flashes the board:
 
 | File | Flash at | When |
 |---|---|---|
 | `awake-agent-esp32-d1-mini-<version>-install.bin` | `0x0` | first installation, or to start over: it **wipes the saved setup** |
 | `awake-agent-esp32-d1-mini-<version>-update.bin` | `0x10000` | updates: the setup is **kept** |
+
+With the board on the same computer, `make upload PORT=COM5` builds and flashes in one step (it keeps
+the setup). Otherwise, flash the files from a browser, with nothing to install:
 
 1. Plug the board into a computer with a **data** USB cable (not a charge-only one). On Windows, if no
    new COM port appears, install the driver of the board's USB chip (CH340/CH9102 from wch-ic.com, or
@@ -101,8 +105,7 @@ make -C agents/esp32-d1-mini upload PORT=COM5
 ```
 
 The partition table is `min_spiffs` (1.9 MB app, OTA slots; the app is flashed at `0x10000`, the setup
-lives in NVS at `0x9000`). The release workflow builds both files and attaches them to every GitHub
-release.
+lives in NVS at `0x9000`). CI only checks that the firmware compiles: nothing is published.
 
 ## Code
 

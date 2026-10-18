@@ -13,11 +13,11 @@ repo/
 │   ├── README.md     list of agents, how to contribute one
 │   ├── go/           Go 1.27 — reference agent (PC, Raspberry Pi), simulated outputs
 │   ├── arduino-mkr-wifi-1010/  C++ (arduino-cli) — firmware for the MKR WiFi 1010, GPIO outputs
-│   └── esp32-d1-mini/  C++ (arduino-cli, esp32 core) — ESP32 D1 mini firmware, setup page, .bin in releases
+│   └── esp32-d1-mini/  C++ (arduino-cli, esp32 core) — ESP32 D1 mini firmware, setup page on the board
 ├── docs/PROTOCOL.md  agent ↔ server protocol v1: the only contract with the agents
 ├── .github/workflows ci.yml (make check + make test on push/PR); release.yml (vX.Y.Z tag: checks,
-│                     tag = server version, Docker image to ghcr.io/jacopofilonzi/awake, amd64 + arm64,
-│                     ESP32 firmware .bin attached to the GitHub release); ci.yml also compiles the ESP32 firmware
+│                     tag = server version, Docker image to ghcr.io/jacopofilonzi/awake, amd64 + arm64);
+│                     ci.yml also checks that the ESP32 firmware compiles (agent firmware is never published)
 ├── Dockerfile        build stage (npm ci, vite, esbuild) → node:24-alpine: backend bundle + UI in /app/web;
 │                     docker-entrypoint.sh makes /data owned by `node` (bind mounts), then runs as `node`
 ├── docker-compose.yml  runs ghcr.io/jacopofilonzi/awake:${AWAKE_VERSION:-latest} (the image CI publishes on tags)
@@ -189,9 +189,10 @@ agents/arduino-mkr-wifi-1010/awake-agent/
 Firmware for the ESP32 D1 mini (ESP32-WROOM-32). Built with arduino-cli through its own Makefile
 (`build|bin|upload|monitor`); core esp32:esp32 3.3.12 and ArduinoJson pinned in `sketch.yaml`, partition
 table `min_spiffs`. **Nothing is compiled in**: Wi-Fi, server, token, Wake-on-LAN port, status LED and
-outputs are entered on a setup page served by the board and kept in NVS, so CI builds one image for
-everyone. `make bin` writes `-install.bin` (merged, flash at 0x0: wipes the setup, which lives in NVS at
-0x9000) and `-update.bin` (app only, flash at 0x10000: keeps it). Not part of `make check`; CI compiles it.
+outputs are entered on a setup page served by the board and kept in NVS, so one build works for any
+setup. Firmware is never published by CI: people build and flash their agents themselves. `make bin` writes `-install.bin` (merged, flash at 0x0: wipes the setup, which lives in NVS at
+0x9000) and `-update.bin` (app only, flash at 0x10000: keeps it). Not part of `make check`; CI checks
+that it compiles.
 No unit tests and no hardware in the loop yet: checked by compiling. Details and the flashing guide (from
 the browser, esptool-js) in its README.
 
