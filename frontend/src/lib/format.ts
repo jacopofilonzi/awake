@@ -1,7 +1,7 @@
 // Presentation helpers shared by pages: device status, icons, relative times.
 
-import type { Device, LogEntry } from "@awake/shared";
-import type { IconName } from "./icons.ts";
+import type { Device, LogEntry, OutputMode } from "@awake/shared";
+import { DEVICE_ICON, type IconName } from "./icons.ts";
 import { i18n, t, type Key } from "./i18n/index.svelte.ts";
 
 export type Tone = "ok" | "off" | "warn" | "error" | "unknown";
@@ -20,9 +20,15 @@ export function deviceState(d: Device): { tone: Tone; label: string } {
   return { tone: "unknown", label: t(`status.unknown.${reason}` as Key) };
 }
 
+/** The chosen icon, or the automatic one. */
 export function deviceIcon(d: Device): IconName {
-  if (d.kind === "wol") return "computer";
-  return d.status.output?.mode === "switch" ? "toggle" : "power";
+  return d.icon ? DEVICE_ICON[d.icon] : autoDeviceIcon(d.kind, d.status.output?.mode ?? null);
+}
+
+/** The icon of a device left on "Automatic": by kind, and by output mode for outputs. */
+export function autoDeviceIcon(kind: Device["kind"], mode: OutputMode | null): IconName {
+  if (kind === "wol") return "computer";
+  return mode === "switch" ? "toggle" : "power";
 }
 
 export function deviceKind(d: Device): string {

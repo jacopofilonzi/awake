@@ -1,17 +1,21 @@
 <script lang="ts">
   // Create or edit a device: Wake-on-LAN (MAC + agents) or bound to an agent's output.
-  import { deviceInputSchema, type Agent, type Device, type DeviceInput } from "@awake/shared";
+  import { DEVICE_ICONS, deviceInputSchema, type Agent, type Device, type DeviceIcon, type DeviceInput } from "@awake/shared";
   import Dialog from "../components/Dialog.svelte";
+  import Icon from "../components/Icon.svelte";
   import Segmented from "../components/Segmented.svelte";
   import TextField from "../components/TextField.svelte";
   import { api, ApiFailure } from "../lib/api.ts";
   import { reloadDevices } from "../lib/data.svelte.ts";
+  import { autoDeviceIcon } from "../lib/format.ts";
   import { t, type Key } from "../lib/i18n/index.svelte.ts";
+  import { DEVICE_ICON, type IconName } from "../lib/icons.ts";
   import { errorText, snack } from "../lib/ui.svelte.ts";
 
   let { open, houseId, houseName, device = null, onclose }: { open: boolean; houseId: string; houseName: string; device?: Device | null; onclose: () => void } = $props();
 
   let name = $state("");
+  let icon = $state<DeviceIcon | null>(null); // null: automatic
   let kind = $state<"wol" | "output">("wol");
   let mac = $state("");
   let agentIds = $state<string[]>([]);
@@ -27,6 +31,7 @@
     if (!open) return;
     const cfg = device?.config;
     name = device?.name ?? "";
+    icon = device?.icon ?? null;
     kind = cfg?.action.type ?? "wol";
     mac = cfg?.action.type === "wol" ? cfg.action.mac : "";
     agentIds = cfg?.action.type === "wol" ? [...cfg.action.agentIds] : [];
@@ -42,11 +47,14 @@
   });
 
   const outputs = $derived(agents.flatMap((a) => a.outputs.map((o) => ({ agent: a, out: o, key: `${a.id}/${o.id}` }))));
+  /** What "Automatic" looks like for the device as configured right now. */
+  const autoIcon = $derived(autoDeviceIcon(kind, kind === "output" ? (outputs.find((o) => o.key === output)?.out.mode ?? null) : null));
 
   function input(): unknown {
     const [agentId, outputId] = output.split("/");
     return {
       name,
+      icon,
       ip: ip.trim() || null,
       probePort: port.trim() ? Number(port) : null,
       action: kind === "wol" ? { type: "wol", mac, agentIds } : { type: "output", agentId: agentId ?? "", outputId: outputId ?? "" },
@@ -83,15 +91,42 @@
   }
 </script>
 
+<!-- "Automatic" (value null) has a dashed border: it looks like the icon it currently resolves to. -->
+{#snippet choice(value: DeviceIcon | null, glyph: IconName, label: string)}
+  <button
+    type="button"
+    role="radio"
+    aria-checked={icon === value}
+    aria-label={label}
+    title={label}
+    class="grid aspect-square place-items-center rounded-xl border transition-colors {value === null ? 'border-dashed' : ''}
+      {icon === value ? 'border-transparent bg-primary text-on-primary shadow-soft' : 'border-glass-line bg-glass-strong text-on-surface-variant hover:text-on-surface'}"
+    onclick={() => (icon = value)}
+  >
+    <Icon name={glyph} size={22} />
+  </button>
+{/snippet}
+
 <Dialog
   {open}
   {onclose}
-  icon="devices"
+  icon={icon ? DEVICE_ICON[icon] : autoIcon}
   title={device ? t("device.form.editTitle") : t("device.form.newTitle")}
   subtitle={device ? device.name : t("device.form.inHouse", { house: houseName })}
 >
   <form class="space-y-5" onsubmit={(e) => (e.preventDefault(), save())}>
     <TextField label={t("device.form.name")} bind:value={name} placeholder={t("device.form.namePlaceholder")} error={errors.name} maxlength={64} />
+
+    <fieldset>
+      <legend class="field-label">{t("device.form.icon")}</legend>
+      <div class="grid grid-cols-6 gap-2 sm:grid-cols-7" role="radiogroup" aria-label={t("device.form.icon")}>
+        {@render choice(null, autoIcon, t("device.form.iconAuto"))}
+        {#each DEVICE_ICONS as i (i)}
+          {@render choice(i, DEVICE_ICON[i], t(`device.icons.${i}`))}
+        {/each}
+      </div>
+      <p class="hint">{icon ? t(`device.icons.${icon}`) : t("device.form.iconAuto")}</p>
+    </fieldset>
 
     <div>
       <span class="field-label">{t("device.form.how")}</span>

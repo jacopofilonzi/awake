@@ -162,6 +162,7 @@ export const en = {
   },
   device: {
     kind: { wol: "Wake-on-LAN", button: "Button", switch: "Switch" },
+    icons: { "monitor": "PC", "laptop": "Laptop", "server": "Server", "hard-drive": "NAS", "printer": "Printer", "tv": "TV", "gamepad-2": "Console", "router": "Router / network", "lightbulb": "Light", "lamp": "Lamp", "plug": "Socket", "fan": "Fan", "heater": "Heater", "air-vent": "Air conditioner", "cctv": "Camera", "speaker": "Speaker", "coffee": "Coffee machine", "refrigerator": "Fridge", "washing-machine": "Washing machine", "door-closed": "Door / gate" },
     wake: "Turn on",
     alreadyOn: "On",
     press: "Press",
@@ -196,6 +197,8 @@ export const en = {
       editTitle: "Edit device",
       inHouse: "in {house}",
       name: "Name",
+      icon: "Icon",
+      iconAuto: "Automatic",
       namePlaceholder: "e.g. Gaming PC",
       how: "How it turns on",
       output: "Agent output",

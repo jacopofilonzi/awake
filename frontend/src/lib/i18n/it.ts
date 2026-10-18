@@ -112,6 +112,7 @@ export const it: Messages = {
   },
   device: {
     kind: { wol: "Wake-on-LAN", button: "Pulsante", switch: "Interruttore" },
+    icons: { "monitor": "PC", "laptop": "Portatile", "server": "Server", "hard-drive": "NAS", "printer": "Stampante", "tv": "TV", "gamepad-2": "Console", "router": "Router / rete", "lightbulb": "Luce", "lamp": "Lampada", "plug": "Presa", "fan": "Ventilatore", "heater": "Stufa", "air-vent": "Condizionatore", "cctv": "Telecamera", "speaker": "Cassa", "coffee": "Macchina del caffè", "refrigerator": "Frigo", "washing-machine": "Lavatrice", "door-closed": "Porta / cancello" },
     wake: "Accendi",
     alreadyOn: "Acceso",
     press: "Premi",
@@ -146,6 +147,8 @@ export const it: Messages = {
       editTitle: "Modifica dispositivo",
       inHouse: "in {house}",
       name: "Nome",
+      icon: "Icona",
+      iconAuto: "Automatica",
       namePlaceholder: "es. PC gaming",
       how: "Come si accende",
       output: "Uscita di un agent",
