@@ -90,7 +90,7 @@ are written next to it before each migration. Durable: settings (key → JSON), 
 secret sealed with `SECRET_KEY`), users, identities, sessions, password links,
 OAuth states (10 min), houses (name, icon)/members, agents (with the last info reported), agent outputs (as last declared), agent sessions (one row per
 connection: ip, start, end, close code; closed rows pruned after 7 days, rows left open by a crash closed
-at startup with 1001), devices, shares, action
+at startup with 1001), devices (with an optional icon, NULL = automatic), shares, action
 log. In memory only: agent connections, reachability results and check loops (lost on restart: actions
 still `waking` are closed as `ok` at startup), rate-limit counters, SSE subscribers.
 
@@ -119,8 +119,8 @@ runs on :5173, listening on the LAN (`host: true`: board agents and phones conne
 | `lib/ui.svelte.ts` | snackbar, promise-based confirm dialog, error → text |
 | `lib/theme.svelte.ts` | light / dark / system choice, applied as `html[data-theme]` (and the `theme-color` meta) |
 | `lib/storage.ts` | per-browser preferences in `localStorage` (`awake.` prefix), never throws when storage is blocked |
-| `lib/format.ts` | device status/kind/icon, relative times, log lines |
-| `lib/icons.ts` | the Lucide icons used (UI names → `lucide-static` SVGs, imported raw: only those are bundled) |
+| `lib/format.ts` | device status/kind/icon (chosen, or automatic by kind), relative times, log lines |
+| `lib/icons.ts` | the Lucide icons used (UI names → `lucide-static` SVGs, imported raw: only those are bundled); `HOUSE_ICON` / `DEVICE_ICON` map the API's icon ids to them |
 | `lib/actions.ts` | runs a device action (long-press confirmation, API, status into the store, errors) for tiles and the device page |
 | `components/` | AppShell (glass sidebar with houses, or phone header + navigation dock; user or admin), TopBar, Dialog (native `<dialog>`, bottom sheet on phones), DeviceCard (tile with the glowing power button), DeviceActions, Switch, Segmented, Menu (popover, bottom sheet on phones), StatusPill, LogList… |
 | `dialogs/` | short creation/edit flows: device, house, agent (+ token shown once), member/share (UsernameDialog), new user, password link, login provider (ProviderDialog: presets Google/Microsoft/GitHub/Authentik/Keycloak) |
