@@ -117,6 +117,8 @@ runs on :5173, listening on the LAN (`host: true`: board agents and phones conne
 | `lib/data.svelte.ts` | houses and devices kept live by `/api/events` (SSE); `version` (per house) and `actions` counters make pages refetch |
 | `lib/i18n/` | `en.ts` defines the keys, every other dictionary must match (type-checked); `LANGUAGES` lists the languages (native name, dictionary) for the selectors; `errors` must cover every `ErrorCode` |
 | `lib/ui.svelte.ts` | snackbar, promise-based confirm dialog, error → text |
+| `lib/theme.svelte.ts` | light / dark / system choice, applied as `html[data-theme]` (and the `theme-color` meta) |
+| `lib/storage.ts` | per-browser preferences in `localStorage` (`awake.` prefix), never throws when storage is blocked |
 | `lib/format.ts` | device status/kind/icon, relative times, log lines |
 | `lib/icons.ts` | the Lucide icons used (UI names → `lucide-static` SVGs, imported raw: only those are bundled) |
 | `lib/actions.ts` | runs a device action (long-press confirmation, API, status into the store, errors) for tiles and the device page |
