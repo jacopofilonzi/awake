@@ -105,7 +105,7 @@ make -C agents/esp32-d1-mini upload PORT=COM5
 ```
 
 The partition table is `min_spiffs` (1.9 MB app, OTA slots; the app is flashed at `0x10000`, the setup
-lives in NVS at `0x9000`). CI only checks that the firmware compiles: nothing is published.
+lives in NVS at `0x9000`). CI neither compiles nor publishes it.
 
 ## Code
 

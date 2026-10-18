@@ -105,8 +105,8 @@ make check             # typecheck backend and UI, gofmt, go vet, go test
 
 ## Releasing
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs `make check` and `make test` on every push
-to `main` and on pull requests. To publish a version, bump it in `backend/src/version.ts` and
+CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) runs the server, UI and shared checks and tests
+(`npm run check`, `npm test`) on every push to `main` and on pull requests; the agents are not part of CI. To publish a version, bump it in `backend/src/version.ts` and
 `backend/package.json`, commit, then tag it:
 
 ```bash

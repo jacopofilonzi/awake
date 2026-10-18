@@ -1,5 +1,7 @@
-# Checks and tests on every push to main and every pull request; also called by release.yml before
-# building anything. Never builds or publishes artifacts (that happens only on a vX.Y.Z tag).
+# Checks and tests of the server, UI and shared code on every push to main and every pull request; also
+# called by release.yml before building anything. Never builds or publishes artifacts (that happens only on
+# a vX.Y.Z tag). Nothing about the agents runs here: they are checked locally (`make check` includes the
+# Go agent) and whoever runs an agent builds and flashes it.
 name: CI
 
 on:
@@ -20,27 +22,7 @@ jobs:
         with:
           node-version: 24
           cache: npm
-      # The minimum Go version of the agent module, so it keeps building on older Go installs (Pi).
-      - uses: actions/setup-go@v7
-        with:
-          go-version-file: agents/go/go.mod
-          cache-dependency-path: agents/go/go.sum
       - run: npm ci
-      - run: make check
-      - run: make test
-
-  # Checks that the ESP32 firmware still compiles (it needs no configuration file; the MKR one needs a
-  # config.h). Nothing is published: people build and flash their agents themselves.
-  esp32:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v7
-      - uses: arduino/setup-arduino-cli@v2
-        with:
-          version: 1.5.1
-      # The core (compilers included) is a few hundred MB: cache it, keyed on the pinned versions.
-      - uses: actions/cache@v6
-        with:
-          path: ~/.arduino15
-          key: arduino15-${{ hashFiles('agents/esp32-d1-mini/awake-agent/sketch.yaml') }}
-      - run: make -C agents/esp32-d1-mini build
+      # npm scripts, not `make check`/`make test`: those also run the Go agent's checks.
+      - run: npm run check
+      - run: npm test
